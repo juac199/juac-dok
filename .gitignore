@@ -1,0 +1,23 @@
+# Backend secrets and virtual environment
+backend/.env
+backend/venv/
+
+# Python generated files
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Flutter generated files
+frontend/.dart_tool/
+frontend/build/
+
+# Flutter / Android local files
+frontend/android/.gradle/
+frontend/android/local.properties
+
+# IDE files
+frontend/.idea/
+frontend/*.iml
+.vscode/
