@@ -1,29 +1,24 @@
 import 'package:flutter/material.dart';
+
 import '../services/api_service.dart';
 
 class LecturerManagementPage extends StatefulWidget {
   final Map<String, dynamic> user;
 
-  const LecturerManagementPage({
-    super.key,
-    required this.user,
-  });
+  const LecturerManagementPage({super.key, required this.user});
 
   @override
-  State<LecturerManagementPage> createState() =>
-      _LecturerManagementPageState();
+  State<LecturerManagementPage> createState() => _LecturerManagementPageState();
 }
 
-class _LecturerManagementPageState
-    extends State<LecturerManagementPage> {
+class _LecturerManagementPageState extends State<LecturerManagementPage> {
   List<dynamic> _lecturers = [];
   List<dynamic> _filteredLecturers = [];
 
   bool _isLoading = true;
   String? _errorMessage;
 
-  final TextEditingController _searchController =
-      TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -48,8 +43,7 @@ class _LecturerManagementPageState
     try {
       final token = widget.user['access_token'] as String;
 
-      final lecturers =
-          await ApiService.getAdminLecturers(token);
+      final lecturers = await ApiService.getAdminLecturers(token);
 
       if (!mounted) return;
 
@@ -78,17 +72,17 @@ class _LecturerManagementPageState
       }
 
       _filteredLecturers = _lecturers.where((lecturer) {
-        final name =
-            (lecturer['full_name'] ?? '').toString().toLowerCase();
+        final name = (lecturer['full_name'] ?? '').toString().toLowerCase();
 
-        final email =
-            (lecturer['email'] ?? '').toString().toLowerCase();
+        final email = (lecturer['email'] ?? '').toString().toLowerCase();
 
-        final number =
-            (lecturer['lecturer_number'] ?? '').toString().toLowerCase();
+        final number = (lecturer['lecturer_number'] ?? '')
+            .toString()
+            .toLowerCase();
 
-        final department =
-            (lecturer['department'] ?? '').toString().toLowerCase();
+        final department = (lecturer['department'] ?? '')
+            .toString()
+            .toLowerCase();
 
         return name.contains(query) ||
             email.contains(query) ||
@@ -98,9 +92,7 @@ class _LecturerManagementPageState
     });
   }
 
-  Future<void> _showLecturerForm({
-    Map<String, dynamic>? lecturer,
-  }) async {
+  Future<void> _showLecturerForm({Map<String, dynamic>? lecturer}) async {
     final isEditing = lecturer != null;
 
     final fullNameController = TextEditingController(
@@ -143,11 +135,7 @@ class _LecturerManagementPageState
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text(
-                isEditing
-                    ? 'Edit Lecturer'
-                    : 'Add Lecturer',
-              ),
+              title: Text(isEditing ? 'Edit Lecturer' : 'Add Lecturer'),
               content: SizedBox(
                 width: 500,
                 child: SingleChildScrollView(
@@ -163,8 +151,7 @@ class _LecturerManagementPageState
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
-                            if (value == null ||
-                                value.trim().isEmpty) {
+                            if (value == null || value.trim().isEmpty) {
                               return 'Enter full name';
                             }
                             return null;
@@ -173,15 +160,13 @@ class _LecturerManagementPageState
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: emailController,
-                          keyboardType:
-                              TextInputType.emailAddress,
+                          keyboardType: TextInputType.emailAddress,
                           decoration: const InputDecoration(
                             labelText: 'Email',
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
-                            if (value == null ||
-                                value.trim().isEmpty) {
+                            if (value == null || value.trim().isEmpty) {
                               return 'Enter email';
                             }
 
@@ -202,8 +187,7 @@ class _LecturerManagementPageState
                               border: OutlineInputBorder(),
                             ),
                             validator: (value) {
-                              if (value == null ||
-                                  value.isEmpty) {
+                              if (value == null || value.isEmpty) {
                                 return 'Enter password';
                               }
 
@@ -223,8 +207,7 @@ class _LecturerManagementPageState
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
-                            if (value == null ||
-                                value.trim().isEmpty) {
+                            if (value == null || value.trim().isEmpty) {
                               return 'Enter lecturer number';
                             }
                             return null;
@@ -238,8 +221,7 @@ class _LecturerManagementPageState
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
-                            if (value == null ||
-                                value.trim().isEmpty) {
+                            if (value == null || value.trim().isEmpty) {
                               return 'Enter department';
                             }
                             return null;
@@ -254,8 +236,7 @@ class _LecturerManagementPageState
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
-                            if (value == null ||
-                                value.trim().isEmpty) {
+                            if (value == null || value.trim().isEmpty) {
                               return 'Enter phone number';
                             }
                             return null;
@@ -277,15 +258,12 @@ class _LecturerManagementPageState
                             labelText: 'Hire Date',
                             hintText: 'YYYY-MM-DD',
                             border: OutlineInputBorder(),
-                            suffixIcon:
-                                Icon(Icons.calendar_today),
+                            suffixIcon: Icon(Icons.calendar_today),
                           ),
                           onTap: () async {
-                            DateTime initialDate =
-                                DateTime.now();
+                            DateTime initialDate = DateTime.now();
 
-                            if (hireDateController.text
-                                .isNotEmpty) {
+                            if (hireDateController.text.isNotEmpty) {
                               try {
                                 initialDate = DateTime.parse(
                                   hireDateController.text,
@@ -293,14 +271,11 @@ class _LecturerManagementPageState
                               } catch (_) {}
                             }
 
-                            final selectedDate =
-                                await showDatePicker(
+                            final selectedDate = await showDatePicker(
                               context: context,
                               initialDate: initialDate,
-                              firstDate:
-                                  DateTime(1950),
-                              lastDate:
-                                  DateTime(2100),
+                              firstDate: DateTime(1950),
+                              lastDate: DateTime(2100),
                             );
 
                             if (selectedDate != null) {
@@ -308,17 +283,17 @@ class _LecturerManagementPageState
                                   .toString()
                                   .padLeft(2, '0');
 
-                              final day = selectedDate.day
-                                  .toString()
-                                  .padLeft(2, '0');
+                              final day = selectedDate.day.toString().padLeft(
+                                2,
+                                '0',
+                              );
 
                               hireDateController.text =
                                   '${selectedDate.year}-$month-$day';
                             }
                           },
                           validator: (value) {
-                            if (value == null ||
-                                value.trim().isEmpty) {
+                            if (value == null || value.trim().isEmpty) {
                               return 'Select hire date';
                             }
 
@@ -334,18 +309,14 @@ class _LecturerManagementPageState
                 TextButton(
                   onPressed: isSaving
                       ? null
-                      : () => Navigator.pop(
-                            dialogContext,
-                            false,
-                          ),
+                      : () => Navigator.pop(dialogContext, false),
                   child: const Text('Cancel'),
                 ),
                 FilledButton(
                   onPressed: isSaving
                       ? null
                       : () async {
-                          if (!formKey.currentState!
-                              .validate()) {
+                          if (!formKey.currentState!.validate()) {
                             return;
                           }
 
@@ -354,36 +325,20 @@ class _LecturerManagementPageState
                           });
 
                           try {
-                            final token =
-                                widget.user['access_token']
-                                    as String;
+                            final token = widget.user['access_token'] as String;
 
                             final data = {
-                              'full_name':
-                                  fullNameController.text.trim(),
-                              'email':
-                                  emailController.text.trim(),
-                              'lecturer_number':
-                                  lecturerNumberController
-                                      .text
-                                      .trim(),
-                              'department':
-                                  departmentController
-                                      .text
-                                      .trim(),
-                              'phone':
-                                  phoneController.text.trim(),
+                              'full_name': fullNameController.text.trim(),
+                              'email': emailController.text.trim(),
+                              'lecturer_number': lecturerNumberController.text
+                                  .trim(),
+                              'department': departmentController.text.trim(),
+                              'phone': phoneController.text.trim(),
                               'specialization':
-                                  specializationController
-                                      .text
-                                      .trim()
-                                      .isEmpty
+                                  specializationController.text.trim().isEmpty
                                   ? null
-                                  : specializationController
-                                      .text
-                                      .trim(),
-                              'hire_date':
-                                  hireDateController.text.trim(),
+                                  : specializationController.text.trim(),
+                              'hire_date': hireDateController.text.trim(),
                             };
 
                             if (isEditing) {
@@ -393,21 +348,16 @@ class _LecturerManagementPageState
                                 data,
                               );
                             } else {
-                              data['password'] =
-                                  passwordController.text;
+                              data['password'] = passwordController.text;
 
-                              await ApiService.createLecturer(
-                                token,
-                                data,
-                              );
+                              await ApiService.createLecturer(token, data);
                             }
 
                             if (!mounted || !dialogContext.mounted) return;
 
                             Navigator.of(dialogContext).pop(true);
 
-                            ScaffoldMessenger.of(this.context)
-                                .showSnackBar(
+                            ScaffoldMessenger.of(this.context).showSnackBar(
                               SnackBar(
                                 content: Text(
                                   isEditing
@@ -425,13 +375,8 @@ class _LecturerManagementPageState
                               isSaving = false;
                             });
 
-                            ScaffoldMessenger.of(this.context)
-                                .showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  e.toString(),
-                                ),
-                              ),
+                            ScaffoldMessenger.of(this.context).showSnackBar(
+                              SnackBar(content: Text(e.toString())),
                             );
                           }
                         },
@@ -439,14 +384,9 @@ class _LecturerManagementPageState
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child:
-                              CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Text(
-                          isEditing ? 'Update' : 'Create',
-                        ),
+                      : Text(isEditing ? 'Update' : 'Create'),
                 ),
               ],
             );
@@ -469,12 +409,9 @@ class _LecturerManagementPageState
     }
   }
 
-  Future<void> _deleteLecturer(
-    Map<String, dynamic> lecturer,
-  ) async {
+  Future<void> _deleteLecturer(Map<String, dynamic> lecturer) async {
     final lecturerId = lecturer['id'] as int;
-    final lecturerName =
-        lecturer['full_name']?.toString() ?? 'this lecturer';
+    final lecturerName = lecturer['full_name']?.toString() ?? 'this lecturer';
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -487,16 +424,12 @@ class _LecturerManagementPageState
           ),
           actions: [
             TextButton(
-              onPressed: () =>
-                  Navigator.pop(dialogContext, false),
+              onPressed: () => Navigator.pop(dialogContext, false),
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: () =>
-                  Navigator.pop(dialogContext, true),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.red,
-              ),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
               child: const Text('Delete'),
             ),
           ],
@@ -507,59 +440,39 @@ class _LecturerManagementPageState
     if (confirmed != true) return;
 
     try {
-      final token =
-          widget.user['access_token'] as String;
+      final token = widget.user['access_token'] as String;
 
-      await ApiService.deleteLecturer(
-        token,
-        lecturerId,
-      );
+      await ApiService.deleteLecturer(token, lecturerId);
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Lecturer deleted successfully.',
-          ),
-        ),
+        const SnackBar(content: Text('Lecturer deleted successfully.')),
       );
 
       await _loadLecturers();
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString()),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 
-  Widget _buildLecturerCard(
-    Map<String, dynamic> lecturer,
-  ) {
-    final name =
-        lecturer['full_name']?.toString() ?? 'Unknown';
+  Widget _buildLecturerCard(Map<String, dynamic> lecturer) {
+    final name = lecturer['full_name']?.toString() ?? 'Unknown';
 
-    final email =
-        lecturer['email']?.toString() ?? '';
+    final email = lecturer['email']?.toString() ?? '';
 
-    final lecturerNumber =
-        lecturer['lecturer_number']?.toString() ?? '';
+    final lecturerNumber = lecturer['lecturer_number']?.toString() ?? '';
 
-    final department =
-        lecturer['department']?.toString() ?? '';
+    final department = lecturer['department']?.toString() ?? '';
 
-    final phone =
-        lecturer['phone']?.toString() ?? '';
+    final phone = lecturer['phone']?.toString() ?? '';
 
-    final specialization =
-        lecturer['specialization']?.toString() ?? '';
+    final specialization = lecturer['specialization']?.toString() ?? '';
 
-    final hireDate =
-        lecturer['hire_date']?.toString() ?? '';
+    final hireDate = lecturer['hire_date']?.toString() ?? '';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -571,9 +484,7 @@ class _LecturerManagementPageState
             CircleAvatar(
               radius: 28,
               child: Text(
-                name.isNotEmpty
-                    ? name[0].toUpperCase()
-                    : 'L',
+                name.isNotEmpty ? name[0].toUpperCase() : 'L',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -583,8 +494,7 @@ class _LecturerManagementPageState
             const SizedBox(width: 16),
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     name,
@@ -600,22 +510,12 @@ class _LecturerManagementPageState
                     spacing: 12,
                     runSpacing: 6,
                     children: [
-                      Text(
-                        'ID: $lecturerNumber',
-                      ),
-                      Text(
-                        'Department: $department',
-                      ),
-                      Text(
-                        'Phone: $phone',
-                      ),
+                      Text('ID: $lecturerNumber'),
+                      Text('Department: $department'),
+                      Text('Phone: $phone'),
                       if (specialization.isNotEmpty)
-                        Text(
-                          'Specialization: $specialization',
-                        ),
-                      Text(
-                        'Hire Date: $hireDate',
-                      ),
+                        Text('Specialization: $specialization'),
+                      Text('Hire Date: $hireDate'),
                     ],
                   ),
                 ],
@@ -626,20 +526,13 @@ class _LecturerManagementPageState
               children: [
                 IconButton(
                   tooltip: 'Edit Lecturer',
-                  onPressed: () =>
-                      _showLecturerForm(
-                    lecturer: lecturer,
-                  ),
+                  onPressed: () => _showLecturerForm(lecturer: lecturer),
                   icon: const Icon(Icons.edit),
                 ),
                 IconButton(
                   tooltip: 'Delete Lecturer',
-                  onPressed: () =>
-                      _deleteLecturer(lecturer),
-                  icon: const Icon(
-                    Icons.delete,
-                    color: Colors.red,
-                  ),
+                  onPressed: () => _deleteLecturer(lecturer),
+                  icon: const Icon(Icons.delete, color: Colors.red),
                 ),
               ],
             ),
@@ -653,15 +546,11 @@ class _LecturerManagementPageState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Lecturer Management',
-        ),
+        title: const Text('Lecturer Management'),
         actions: [
           IconButton(
             tooltip: 'Refresh',
-            onPressed: _isLoading
-                ? null
-                : _loadLecturers,
+            onPressed: _isLoading ? null : _loadLecturers,
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -673,115 +562,72 @@ class _LecturerManagementPageState
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText:
-                    'Search lecturers...',
-                prefixIcon:
-                    const Icon(Icons.search),
-                suffixIcon:
-                    _searchController.text.isNotEmpty
-                        ? IconButton(
-                            onPressed: () {
-                              _searchController.clear();
-                            },
-                            icon:
-                                const Icon(Icons.clear),
-                          )
-                        : null,
-                border:
-                    const OutlineInputBorder(),
+                hintText: 'Search lecturers...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                        icon: const Icon(Icons.clear),
+                      )
+                    : null,
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
             Expanded(
               child: _isLoading
-                  ? const Center(
-                      child:
-                          CircularProgressIndicator(),
-                    )
+                  ? const Center(child: CircularProgressIndicator())
                   : _errorMessage != null
-                      ? Center(
-                          child: Column(
-                            mainAxisSize:
-                                MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                size: 48,
-                              ),
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              Text(
-                                _errorMessage!,
-                                textAlign:
-                                    TextAlign.center,
-                              ),
-                              const SizedBox(
-                                height: 12,
-                              ),
-                              FilledButton.icon(
-                                onPressed:
-                                    _loadLecturers,
-                                icon: const Icon(
-                                  Icons.refresh,
-                                ),
-                                label: const Text(
-                                  'Retry',
-                                ),
-                              ),
-                            ],
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.error_outline, size: 48),
+                          const SizedBox(height: 12),
+                          Text(_errorMessage!, textAlign: TextAlign.center),
+                          const SizedBox(height: 12),
+                          FilledButton.icon(
+                            onPressed: _loadLecturers,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Retry'),
                           ),
-                        )
-                      : _filteredLecturers.isEmpty
-                          ? const Center(
-                              child: Column(
-                                mainAxisSize:
-                                    MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons
-                                        .person_search,
-                                    size: 56,
-                                  ),
-                                  SizedBox(height: 12),
-                                  Text(
-                                    'No lecturers found.',
-                                    style:
-                                        TextStyle(
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : RefreshIndicator(
-                              onRefresh:
-                                  _loadLecturers,
-                              child: ListView.builder(
-                                physics:
-                                    const AlwaysScrollableScrollPhysics(),
-                                itemCount:
-                                    _filteredLecturers
-                                        .length,
-                                itemBuilder:
-                                    (context, index) {
-                                  return _buildLecturerCard(
-                                    _filteredLecturers[
-                                            index]
-                                        as Map<String,
-                                            dynamic>,
-                                  );
-                                },
-                              ),
-                            ),
+                        ],
+                      ),
+                    )
+                  : _filteredLecturers.isEmpty
+                  ? const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.person_search, size: 56),
+                          SizedBox(height: 12),
+                          Text(
+                            'No lecturers found.',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _loadLecturers,
+                      child: ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: _filteredLecturers.length,
+                        itemBuilder: (context, index) {
+                          return _buildLecturerCard(
+                            _filteredLecturers[index] as Map<String, dynamic>,
+                          );
+                        },
+                      ),
+                    ),
             ),
           ],
         ),
       ),
-      floatingActionButton:
-          FloatingActionButton.extended(
-        onPressed: () =>
-            _showLecturerForm(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showLecturerForm(),
         icon: const Icon(Icons.person_add),
         label: const Text('Add Lecturer'),
       ),

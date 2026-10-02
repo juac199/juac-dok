@@ -5,10 +5,7 @@ import '../services/api_service.dart';
 class AddStudentPage extends StatefulWidget {
   final Map<String, dynamic> user;
 
-  const AddStudentPage({
-    super.key,
-    required this.user,
-  });
+  const AddStudentPage({super.key, required this.user});
 
   @override
   State<AddStudentPage> createState() => _AddStudentPageState();
@@ -80,8 +77,7 @@ class _AddStudentPageState extends State<AddStudentPage> {
 
     setState(() {
       _enrollmentDate = selectedDate;
-      _enrollmentDateController.text =
-          _formatDate(selectedDate);
+      _enrollmentDateController.text = _formatDate(selectedDate);
     });
   }
 
@@ -119,37 +115,25 @@ class _AddStudentPageState extends State<AddStudentPage> {
         'full_name': _fullNameController.text.trim(),
         'email': _emailController.text.trim(),
         'password': _passwordController.text,
-        'student_number':
-            _studentNumberController.text.trim(),
+        'student_number': _studentNumberController.text.trim(),
         'date_of_birth': _formatDate(_dateOfBirth!),
         'phone': _phoneController.text.trim(),
         'address': _addressController.text.trim(),
         'program': _programController.text.trim(),
-        'enrollment_date':
-            _formatDate(_enrollmentDate!),
+        'enrollment_date': _formatDate(_enrollmentDate!),
       };
 
-      await ApiService.createStudent(
-        token,
-        student,
-      );
+      await ApiService.createStudent(token, student);
 
       if (!mounted) return;
 
-      _showMessage(
-        'Student created successfully.',
-      );
+      _showMessage('Student created successfully.');
 
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
 
-      _showMessage(
-        e.toString().replaceFirst(
-              'Exception: ',
-              '',
-            ),
-      );
+      _showMessage(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() {
@@ -160,11 +144,8 @@ class _AddStudentPageState extends State<AddStudentPage> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _buildTextField({
@@ -220,18 +201,14 @@ class _AddStudentPageState extends State<AddStudentPage> {
       appBar: AppBar(
         title: const Text(
           'Add Student',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 800,
-            ),
+            constraints: const BoxConstraints(maxWidth: 800),
             child: Card(
               elevation: 3,
               child: Padding(
@@ -239,8 +216,7 @@ class _AddStudentPageState extends State<AddStudentPage> {
                 child: Form(
                   key: _formKey,
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Student Information',
@@ -279,8 +255,7 @@ class _AddStudentPageState extends State<AddStudentPage> {
                         label: 'Email',
                         icon: Icons.email_outlined,
                         hint: 'student@example.com',
-                        keyboardType:
-                            TextInputType.emailAddress,
+                        keyboardType: TextInputType.emailAddress,
                         validator: _emailValidator,
                       ),
 
@@ -296,8 +271,7 @@ class _AddStudentPageState extends State<AddStudentPage> {
                         suffixIcon: IconButton(
                           onPressed: () {
                             setState(() {
-                              _obscurePassword =
-                                  !_obscurePassword;
+                              _obscurePassword = !_obscurePassword;
                             });
                           },
                           icon: Icon(
@@ -307,8 +281,7 @@ class _AddStudentPageState extends State<AddStudentPage> {
                           ),
                         ),
                         validator: (value) {
-                          if (value == null ||
-                              value.isEmpty) {
+                          if (value == null || value.isEmpty) {
                             return 'Password is required.';
                           }
 
@@ -324,8 +297,7 @@ class _AddStudentPageState extends State<AddStudentPage> {
 
                       // STUDENT NUMBER
                       _buildTextField(
-                        controller:
-                            _studentNumberController,
+                        controller: _studentNumberController,
                         label: 'Student Number',
                         icon: Icons.badge_outlined,
                         hint: 'e.g. STU001',
@@ -336,8 +308,7 @@ class _AddStudentPageState extends State<AddStudentPage> {
 
                       // DATE OF BIRTH
                       TextFormField(
-                        controller:
-                            _dateOfBirthController,
+                        controller: _dateOfBirthController,
                         readOnly: true,
                         validator: (value) {
                           if (_dateOfBirth == null) {
@@ -349,10 +320,8 @@ class _AddStudentPageState extends State<AddStudentPage> {
                         onTap: _selectDateOfBirth,
                         decoration: const InputDecoration(
                           labelText: 'Date of Birth',
-                          prefixIcon:
-                              Icon(Icons.calendar_today),
-                          suffixIcon:
-                              Icon(Icons.arrow_drop_down),
+                          prefixIcon: Icon(Icons.calendar_today),
+                          suffixIcon: Icon(Icons.arrow_drop_down),
                           border: OutlineInputBorder(),
                         ),
                       ),
@@ -388,8 +357,7 @@ class _AddStudentPageState extends State<AddStudentPage> {
                         controller: _programController,
                         label: 'Program',
                         icon: Icons.school_outlined,
-                        hint:
-                            'e.g. Bachelor of Computer Science',
+                        hint: 'e.g. Bachelor of Computer Science',
                         validator: _requiredValidator,
                       ),
 
@@ -397,8 +365,7 @@ class _AddStudentPageState extends State<AddStudentPage> {
 
                       // ENROLLMENT DATE
                       TextFormField(
-                        controller:
-                            _enrollmentDateController,
+                        controller: _enrollmentDateController,
                         readOnly: true,
                         validator: (value) {
                           if (_enrollmentDate == null) {
@@ -410,10 +377,8 @@ class _AddStudentPageState extends State<AddStudentPage> {
                         onTap: _selectEnrollmentDate,
                         decoration: const InputDecoration(
                           labelText: 'Enrollment Date',
-                          prefixIcon:
-                              Icon(Icons.event_outlined),
-                          suffixIcon:
-                              Icon(Icons.arrow_drop_down),
+                          prefixIcon: Icon(Icons.event_outlined),
+                          suffixIcon: Icon(Icons.arrow_drop_down),
                           border: OutlineInputBorder(),
                         ),
                       ),
@@ -428,19 +393,12 @@ class _AddStudentPageState extends State<AddStudentPage> {
                               onPressed: _isLoading
                                   ? null
                                   : () {
-                                      Navigator.pop(
-                                        context,
-                                      );
+                                      Navigator.pop(context);
                                     },
                               style: OutlinedButton.styleFrom(
-                                minimumSize:
-                                    const Size.fromHeight(
-                                  52,
-                                ),
+                                minimumSize: const Size.fromHeight(52),
                               ),
-                              child: const Text(
-                                'Cancel',
-                              ),
+                              child: const Text('Cancel'),
                             ),
                           ),
 
@@ -448,31 +406,21 @@ class _AddStudentPageState extends State<AddStudentPage> {
 
                           Expanded(
                             child: FilledButton.icon(
-                              onPressed: _isLoading
-                                  ? null
-                                  : _createStudent,
+                              onPressed: _isLoading ? null : _createStudent,
                               icon: _isLoading
                                   ? const SizedBox(
                                       width: 20,
                                       height: 20,
-                                      child:
-                                          CircularProgressIndicator(
+                                      child: CircularProgressIndicator(
                                         strokeWidth: 2,
                                       ),
                                     )
-                                  : const Icon(
-                                      Icons.person_add,
-                                    ),
+                                  : const Icon(Icons.person_add),
                               label: Text(
-                                _isLoading
-                                    ? 'Creating...'
-                                    : 'Create Student',
+                                _isLoading ? 'Creating...' : 'Create Student',
                               ),
                               style: FilledButton.styleFrom(
-                                minimumSize:
-                                    const Size.fromHeight(
-                                  52,
-                                ),
+                                minimumSize: const Size.fromHeight(52),
                               ),
                             ),
                           ),

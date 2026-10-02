@@ -3,185 +3,457 @@ import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
 class StudentResultsPage extends StatefulWidget {
-  final String token;
+  final Map<String, dynamic> user;
 
-  const StudentResultsPage({
-    super.key,
-    required this.token,
-  });
+  const StudentResultsPage({super.key, required this.user});
 
   @override
   State<StudentResultsPage> createState() => _StudentResultsPageState();
 }
 
 class _StudentResultsPageState extends State<StudentResultsPage> {
-  List<dynamic> results = [];
-  List<dynamic> gpaData = [];
+  bool _loading = true;
+  String? _error;
 
-  double cgpa = 0.0;
-  int totalCreditHours = 0;
+  List<dynamic> _results = [];
+  Map<String, dynamic> _cgpa = {};
+  Map<String, dynamic> _performance = {};
 
-  bool isLoading = true;
-  String? errorMessage;
+  String get token => widget.user['access_token'] as String;
 
   @override
   void initState() {
     super.initState();
-    loadResults();
+    _loadResults();
   }
 
-  Future<void> loadResults() async {
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-    });
+  Future<void> _loadResults() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
 
     try {
-      final resultsData =
-          await ApiService.getMyResults(widget.token);
-
-      final gpaResult =
-          await ApiService.getMyGpa(widget.token);
-
-      final cgpaResult =
-          await ApiService.getMyCgpa(widget.token);
+      final responses = await Future.wait([
+        ApiService.getMyResults(token),
+        ApiService.getMyGpa(token),
+        ApiService.getMyCgpa(token),
+        ApiService.getMyPerformance(token),
+      ]);
 
       if (!mounted) return;
 
+      final results = responses[0] as List<dynamic>;
+      final cgpa = responses[2] as Map<String, dynamic>;
+      final performance = responses[3] as Map<String, dynamic>;
+
       setState(() {
-        results = resultsData;
-        gpaData = gpaResult;
-
-        cgpa =
-            (cgpaResult['cgpa'] as num?)?.toDouble() ?? 0.0;
-
-        totalCreditHours =
-            (cgpaResult['total_credit_hours'] as num?)?.toInt() ?? 0;
-
-        isLoading = false;
+        _results = results;
+        _cgpa = cgpa;
+        _performance = performance;
+        _loading = false;
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        errorMessage = e.toString();
-        isLoading = false;
+        _loading = false;
+        _error = e.toString().replaceFirst('Exception: ', '');
       });
     }
   }
 
-  double getGpaForResult(dynamic result) {
-    final semester =
-        result['semester']?.toString() ?? '';
+  String _text(dynamic source, List<String> keys, [String fallback = '—']) {
+    if (source is! Map) return fallback;
 
-    final academicYear =
-        result['academic_year']?.toString() ?? '';
+    for (final key in keys) {
+      final value = source[key];
 
-    for (final gpa in gpaData) {
-      if (gpa['semester']?.toString() == semester &&
-          gpa['academic_year']?.toString() == academicYear) {
-        return (gpa['gpa'] as num?)?.toDouble() ?? 0.0;
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString();
       }
     }
 
-    return 0.0;
+    return fallback;
   }
 
-  List<dynamic> getSemesterResults(
-    String semester,
-    String academicYear,
-  ) {
-    return results.where((result) {
-      return result['semester']?.toString() == semester &&
-          result['academic_year']?.toString() == academicYear;
-    }).toList();
-  }
+  String _number(dynamic source, List<String> keys, [String fallback = '—']) {
+    final value = _text(source, keys, fallback);
 
-  List<Map<String, String>> getSemesterGroups() {
-    final groups = <Map<String, String>>[];
+    if (value == fallback) return fallback;
 
-    for (final result in results) {
-      final semester =
-          result['semester']?.toString() ?? '';
+    final parsed = double.tryParse(value);
 
-      final academicYear =
-          result['academic_year']?.toString() ?? '';
+    if (parsed == null) return value;
 
-      final exists = groups.any(
-        (group) =>
-            group['semester'] == semester &&
-            group['academic_year'] == academicYear,
-      );
-
-      if (!exists) {
-        groups.add({
-          'semester': semester,
-          'academic_year': academicYear,
-        });
-      }
+    if (parsed == parsed.roundToDouble()) {
+      return parsed.toInt().toString();
     }
 
-    return groups;
+    return parsed.toStringAsFixed(2);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Academic Results',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
+  String _cgpaValue() {
+    return _number(_cgpa, [
+      'cgpa',
+      'value',
+      'cumulative_gpa',
+    ], _number(_performance, ['cgpa'], '—'));
+  }
+
+  String _averageMarks() {
+    return _number(_performance, ['average_marks', 'average_mark'], '—');
+  }
+
+  String _totalCredits() {
+    return _number(_performance, ['total_credit_hours', 'credit_hours'], '—');
+  }
+
+  String _totalSubjects() {
+    return _number(_performance, [
+      'total_subjects',
+      'subjects_count',
+    ], _results.length.toString());
+  }
+
+  String _academicStatus() {
+    return _text(_performance, ['academic_status', 'status'], '—');
+  }
+
+  String _subjectCode(Map<String, dynamic> result) {
+    return _text(result, ['subject_code', 'code'], 'SUBJECT');
+  }
+
+  String _subjectName(Map<String, dynamic> result) {
+    return _text(result, ['subject_name', 'name', 'title'], 'Unnamed Subject');
+  }
+
+  String _marks(Map<String, dynamic> result) {
+    return _number(result, ['marks', 'mark', 'score'], '—');
+  }
+
+  String _grade(Map<String, dynamic> result) {
+    return _text(result, ['grade', 'letter_grade'], '—');
+  }
+
+  String _gradePoint(Map<String, dynamic> result) {
+    return _number(result, ['grade_point', 'points', 'gpa'], '—');
+  }
+
+  String _credits(Map<String, dynamic> result) {
+    return _number(result, ['credit_hours', 'credits', 'credit'], '—');
+  }
+
+  String _semester(Map<String, dynamic> result) {
+    return _text(result, ['semester'], '—');
+  }
+
+  String _academicYear(Map<String, dynamic> result) {
+    return _text(result, ['academic_year'], '—');
+  }
+
+  Color _gradeColor(String grade) {
+    final normalized = grade.toUpperCase();
+
+    if (normalized == 'A' || normalized == 'A+' || normalized == 'A-') {
+      return const Color(0xFF176B4D);
+    }
+
+    if (normalized == 'B' || normalized == 'B+' || normalized == 'B-') {
+      return const Color(0xFF2457A6);
+    }
+
+    if (normalized == 'C' || normalized == 'C+' || normalized == 'C-') {
+      return const Color(0xFF8A6200);
+    }
+
+    if (normalized == 'D' || normalized == 'D+' || normalized == 'D-') {
+      return const Color(0xFF9A5A00);
+    }
+
+    if (normalized == 'F') {
+      return const Color(0xFFB42318);
+    }
+
+    return const Color(0xFF5F6B7A);
+  }
+
+  Widget _summaryCard(IconData icon, String title, String value) {
+    return Expanded(
+      child: Card(
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: Color(0xFFE3E8F0)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(15),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: const Color(0xFFEAF2FF),
+                child: Icon(icon, color: const Color(0xFF2457A6), size: 20),
+              ),
+              const SizedBox(height: 11),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xFF6B7280),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 20,
+                  color: Color(0xFF102A43),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
           ),
         ),
-        actions: [
-          IconButton(
-            onPressed: isLoading ? null : loadResults,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
-          ),
-        ],
       ),
-      body: _buildBody(),
     );
   }
 
-  Widget _buildBody() {
-    if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+  Widget _resultCard(Map<String, dynamic> result) {
+    final grade = _grade(result);
+    final gradeColor = _gradeColor(grade);
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: Color(0xFFE3E8F0)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: const Color(0xFFEAF2FF),
+                  child: const Icon(
+                    Icons.assignment_rounded,
+                    color: Color(0xFF2457A6),
+                  ),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _subjectCode(result),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF2457A6),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        _subjectName(result),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF102A43),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: gradeColor.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    grade,
+                    style: TextStyle(
+                      color: gradeColor,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _infoChip(Icons.percent_rounded, 'Marks: ${_marks(result)}'),
+                _infoChip(Icons.star_rounded, 'Point: ${_gradePoint(result)}'),
+                _infoChip(Icons.school_rounded, 'Credits: ${_credits(result)}'),
+                _infoChip(Icons.calendar_month_rounded, _semester(result)),
+                _infoChip(Icons.event_rounded, _academicYear(result)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F6FA),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: const Color(0xFF5F6B7A)),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF5F6B7A),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _performancePanel() {
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: Color(0xFFE3E8F0)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Academic Summary',
+              style: TextStyle(
+                color: Color(0xFF102A43),
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 15),
+            _summaryRow(
+              Icons.trending_up_rounded,
+              'Academic Status',
+              _academicStatus(),
+            ),
+            _summaryRow(
+              Icons.percent_rounded,
+              'Average Marks',
+              _averageMarks(),
+            ),
+            _summaryRow(
+              Icons.menu_book_rounded,
+              'Total Subjects',
+              _totalSubjects(),
+            ),
+            _summaryRow(
+              Icons.schedule_rounded,
+              'Credit Hours',
+              _totalCredits(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _summaryRow(IconData icon, String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 13),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: const Color(0xFF2457A6)),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Text(
+              title,
+              style: const TextStyle(
+                color: Color(0xFF6B7280),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Color(0xFF102A43),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _content() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
     }
 
-    if (errorMessage != null) {
+    if (_error != null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
-                Icons.error_outline,
+                Icons.cloud_off_rounded,
                 size: 60,
+                color: Color(0xFF2457A6),
               ),
               const SizedBox(height: 16),
               const Text(
-                'Unable to load academic results',
+                'Unable to Load Results',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF102A43),
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               Text(
-                errorMessage!,
+                _error!,
                 textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xFF6B7280)),
               ),
-              const SizedBox(height: 20),
-              ElevatedButton.icon(
-                onPressed: loadResults,
-                icon: const Icon(Icons.refresh),
+              const SizedBox(height: 18),
+              FilledButton.icon(
+                onPressed: _loadResults,
+                icon: const Icon(Icons.refresh_rounded),
                 label: const Text('Try Again'),
               ),
             ],
@@ -190,315 +462,153 @@ class _StudentResultsPageState extends State<StudentResultsPage> {
       );
     }
 
-    if (results.isEmpty) {
-      return RefreshIndicator(
-        onRefresh: loadResults,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: const [
-            SizedBox(height: 180),
-            Icon(
-              Icons.school_outlined,
-              size: 70,
-            ),
-            SizedBox(height: 20),
-            Center(
-              child: Text(
-                'No published results yet.',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            SizedBox(height: 10),
-            Center(
-              child: Text(
-                'Your academic results will appear here.',
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
     return RefreshIndicator(
-      onRefresh: loadResults,
+      onRefresh: _loadResults,
       child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         children: [
-          _buildCgpaCard(),
-          const SizedBox(height: 24),
-          ..._buildSemesterSections(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCgpaCard() {
-    return Card(
-      elevation: 3,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const Icon(
-              Icons.school,
-              size: 42,
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Cumulative GPA',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF102A43), Color(0xFF2457A6)],
               ),
+              borderRadius: BorderRadius.circular(24),
             ),
-            const SizedBox(height: 6),
-            Text(
-              cgpa.toStringAsFixed(2),
-              style: const TextStyle(
-                fontSize: 42,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '$totalCreditHours Credit Hours',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 15,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _buildSemesterSections() {
-    final sections = <Widget>[];
-
-    final groups = getSemesterGroups();
-
-    for (final group in groups) {
-      final semester =
-          group['semester'] ?? '';
-
-      final academicYear =
-          group['academic_year'] ?? '';
-
-      final semesterResults =
-          getSemesterResults(
-        semester,
-        academicYear,
-      );
-
-      final semesterGpa =
-          semesterResults.isNotEmpty
-              ? getGpaForResult(
-                  semesterResults.first,
-                )
-              : 0.0;
-
-      sections.add(
-        _buildSemesterCard(
-          semester: semester,
-          academicYear: academicYear,
-          results: semesterResults,
-          gpa: semesterGpa,
-        ),
-      );
-
-      sections.add(
-        const SizedBox(height: 20),
-      );
-    }
-
-    return sections;
-  }
-
-  Widget _buildSemesterCard({
-    required String semester,
-    required String academicYear,
-    required List<dynamic> results,
-    required double gpa,
-  }) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            Row(
+            child: Row(
               children: [
-                const Icon(
-                  Icons.calendar_month,
+                const CircleAvatar(
+                  radius: 27,
+                  backgroundColor: Color(0x33FFFFFF),
+                  child: Icon(
+                    Icons.workspace_premium_rounded,
+                    color: Colors.white,
+                    size: 29,
+                  ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    '$semester • $academicYear',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Academic Results',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Track your grades and academic progress',
+                        style: TextStyle(color: Colors.white70, fontSize: 13),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            ...results.map(
-              (result) =>
-                  _buildResultItem(result),
-            ),
-            const Divider(height: 28),
-            Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Semester GPA',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  gpa.toStringAsFixed(2),
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildResultItem(dynamic result) {
-    final subjectCode =
-        result['subject_code']?.toString() ??
-            'N/A';
-
-    final subjectName =
-        result['subject_name']?.toString() ??
-            'Unknown Subject';
-
-    final marks =
-        (result['marks'] as num?)
-                ?.toDouble() ??
-            0.0;
-
-    final grade =
-        result['grade']?.toString() ??
-            'N/A';
-
-    final gradePoint =
-        (result['grade_point'] as num?)
-                ?.toDouble() ??
-            0.0;
-
-    final creditHours =
-        (result['credit_hours'] as num?)
-                ?.toInt() ??
-            0;
-
-    return Container(
-      margin:
-          const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: Colors.grey.shade300,
-        ),
-        borderRadius:
-            BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          Text(
-            subjectCode,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            subjectName,
-            style: const TextStyle(
-              fontSize: 15,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '$creditHours Credit Hours',
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 22),
           Row(
             children: [
-              Expanded(
-                child: _buildResultValue(
-                  'Marks',
-                  marks.toStringAsFixed(1),
-                ),
+              _summaryCard(
+                Icons.workspace_premium_rounded,
+                'CGPA',
+                _cgpaValue(),
               ),
-              Expanded(
-                child: _buildResultValue(
-                  'Grade',
-                  grade,
-                ),
+              const SizedBox(width: 10),
+              _summaryCard(
+                Icons.menu_book_rounded,
+                'Subjects',
+                _totalSubjects(),
               ),
-              Expanded(
-                child: _buildResultValue(
-                  'Point',
-                  gradePoint.toStringAsFixed(2),
-                ),
-              ),
+              const SizedBox(width: 10),
+              _summaryCard(Icons.schedule_rounded, 'Credits', _totalCredits()),
             ],
           ),
+          const SizedBox(height: 22),
+          _performancePanel(),
+          const SizedBox(height: 28),
+          const Text(
+            'Subject Results',
+            style: TextStyle(
+              color: Color(0xFF102A43),
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Your published academic results',
+            style: TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          if (_results.isEmpty)
+            Card(
+              elevation: 0,
+              margin: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+                side: const BorderSide(color: Color(0xFFE3E8F0)),
+              ),
+              child: const Padding(
+                padding: EdgeInsets.all(26),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.assignment_outlined,
+                      size: 46,
+                      color: Color(0xFF8A94A6),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'No results available yet.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ..._results.map(
+              (item) => _resultCard(Map<String, dynamic>.from(item as Map)),
+            ),
+          const SizedBox(height: 30),
         ],
       ),
     );
   }
 
-  Widget _buildResultValue(
-    String label,
-    String value,
-  ) {
-    return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF5F7FA),
+        elevation: 0,
+        title: const Text(
+          'Results',
           style: TextStyle(
-            color: Colors.grey.shade600,
-            fontSize: 12,
+            color: Color(0xFF102A43),
+            fontWeight: FontWeight.w800,
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.bold,
+        actions: [
+          IconButton(
+            onPressed: _loading ? null : _loadResults,
+            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF102A43)),
           ),
-        ),
-      ],
+        ],
+      ),
+      body: _content(),
     );
   }
 }

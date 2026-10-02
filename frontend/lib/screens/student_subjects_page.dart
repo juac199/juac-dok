@@ -5,572 +5,650 @@ import '../services/api_service.dart';
 class StudentSubjectsPage extends StatefulWidget {
   final Map<String, dynamic> user;
 
-  const StudentSubjectsPage({
-    super.key,
-    required this.user,
-  });
+  const StudentSubjectsPage({super.key, required this.user});
 
   @override
-  State<StudentSubjectsPage> createState() =>
-      _StudentSubjectsPageState();
+  State<StudentSubjectsPage> createState() => _StudentSubjectsPageState();
 }
 
-class _StudentSubjectsPageState
-    extends State<StudentSubjectsPage> {
-  late final String _token;
+class _StudentSubjectsPageState extends State<StudentSubjectsPage> {
+  bool _loading = true;
+  bool _working = false;
+  String? _error;
 
-  List<dynamic> _subjects = [];
+  List<dynamic> _registeredSubjects = [];
   List<dynamic> _availableSubjects = [];
 
-  bool _isLoading = true;
-  bool _isRegistering = false;
-
-  String _semester = 'Semester 1';
-  String _academicYear = '2026/2027';
+  String get token => widget.user['access_token'] as String;
 
   @override
   void initState() {
     super.initState();
-
-    _token = widget.user['access_token'] ?? '';
-
     _loadSubjects();
   }
 
   Future<void> _loadSubjects() async {
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
 
     try {
-      final subjects =
-          await ApiService.getMySubjects(_token);
-
-      final available =
-          await ApiService.getAvailableSubjects(_token);
+      final results = await Future.wait([
+        ApiService.getMySubjects(token),
+        ApiService.getAvailableSubjects(token),
+      ]);
 
       if (!mounted) return;
 
       setState(() {
-        _subjects = subjects;
-        _availableSubjects = available;
+        _registeredSubjects = results[0];
+        _availableSubjects = results[1];
+        _loading = false;
       });
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst(
-              'Exception: ',
-              '',
-            ),
-          ),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _loading = false;
+        _error = e.toString().replaceFirst('Exception: ', '');
+      });
     }
   }
 
-  Future<void> _registerSubject(
-    Map<String, dynamic> subject,
-  ) async {
-    if (_isRegistering) return;
-
-    setState(() {
-      _isRegistering = true;
-    });
-
-    try {
-      await ApiService.registerSubject(
-        _token,
-        subject['id'],
-        _semester,
-        _academicYear,
-      );
-
-      if (!mounted) return;
-
-      Navigator.pop(context);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${subject['subject_code']} registered successfully.',
-          ),
-        ),
-      );
-
-      await _loadSubjects();
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst(
-              'Exception: ',
-              '',
-            ),
-          ),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isRegistering = false;
-        });
-      }
-    }
+  int? _intValue(dynamic value) {
+    if (value is int) return value;
+    return int.tryParse(value?.toString() ?? '');
   }
 
-  Future<void> _dropSubject(
-    Map<String, dynamic> subject,
-  ) async {
-    final registrationId = subject['registration_id'];
+  String _text(
+    Map<String, dynamic> data,
+    List<String> keys, [
+    String fallback = '—',
+  ]) {
+    for (final key in keys) {
+      final value = data[key];
+
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString();
+      }
+    }
+
+    return fallback;
+  }
+
+  int _subjectId(Map<String, dynamic> subject) {
+    return _intValue(subject['subject_id'] ?? subject['id']) ?? 0;
+  }
+
+  int _registrationId(Map<String, dynamic> subject) {
+    return _intValue(
+          subject['registration_id'] ??
+              subject['student_subject_id'] ??
+              subject['id'],
+        ) ??
+        0;
+  }
+
+  String _subjectCode(Map<String, dynamic> subject) {
+    return _text(subject, ['subject_code', 'code'], 'SUBJECT');
+  }
+
+  String _subjectName(Map<String, dynamic> subject) {
+    return _text(subject, ['subject_name', 'name', 'title'], 'Unnamed Subject');
+  }
+
+  String _credits(Map<String, dynamic> subject) {
+    return _text(subject, ['credit_hours', 'credits', 'credit'], '0');
+  }
+
+  String _semester(Map<String, dynamic> subject) {
+    return _text(subject, ['semester'], '—');
+  }
+
+  String _academicYear(Map<String, dynamic> subject) {
+    return _text(subject, ['academic_year'], '—');
+  }
+
+  Future<void> _registerSubject(Map<String, dynamic> subject) async {
+    final subjectId = _subjectId(subject);
+
+    if (subjectId == 0) {
+      _showMessage('Invalid subject information.');
+      return;
+    }
+
+    final semesterController = TextEditingController(text: 'Semester 1');
+    final yearController = TextEditingController(
+      text: DateTime.now().year.toString(),
+    );
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
+      builder: (context) {
         return AlertDialog(
-          title: const Text('Drop Subject'),
-          content: Text(
-            'Are you sure you want to drop '
-            '${subject['subject_code']} - '
-            '${subject['subject_name']}?',
+          title: const Text(
+            'Register Subject',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF102A43),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${_subjectCode(subject)} — ${_subjectName(subject)}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2457A6),
+                ),
+              ),
+              const SizedBox(height: 18),
+              TextField(
+                controller: semesterController,
+                decoration: InputDecoration(
+                  labelText: 'Semester',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: yearController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Academic Year',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ],
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(dialogContext, false);
-              },
+              onPressed: () => Navigator.pop(context, false),
               child: const Text('Cancel'),
             ),
             FilledButton(
               onPressed: () {
-                Navigator.pop(dialogContext, true);
+                if (semesterController.text.trim().isEmpty ||
+                    yearController.text.trim().isEmpty) {
+                  return;
+                }
+
+                Navigator.pop(context, true);
               },
-              child: const Text('Drop'),
+              child: const Text('Register'),
             ),
           ],
         );
       },
     );
 
-    if (confirmed != true || !mounted) return;
+    final semester = semesterController.text.trim();
+    final academicYear = yearController.text.trim();
+
+    semesterController.dispose();
+    yearController.dispose();
+
+    if (confirmed != true) return;
+
+    if (!mounted) return;
+
+    setState(() {
+      _working = true;
+    });
 
     try {
-      await ApiService.dropSubject(
-        _token,
-        registrationId,
+      await ApiService.registerSubject(
+        token,
+        subjectId,
+        semester,
+        academicYear,
       );
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${subject['subject_code']} dropped successfully.',
-          ),
-        ),
-      );
+      _showMessage('${_subjectCode(subject)} registered successfully.');
 
       await _loadSubjects();
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst(
-              'Exception: ',
-              '',
-            ),
-          ),
-        ),
-      );
+      _showMessage(e.toString().replaceFirst('Exception: ', ''), error: true);
+
+      setState(() {
+        _working = false;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _working = false;
+        });
+      }
     }
   }
 
-  void _showRegisterSubjectDialog() {
-    if (_availableSubjects.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'No subjects are currently available.',
-          ),
-        ),
-      );
+  Future<void> _dropSubject(Map<String, dynamic> subject) async {
+    final registrationId = _registrationId(subject);
+
+    if (registrationId == 0) {
+      _showMessage('Invalid registration information.');
       return;
     }
 
-    showDialog(
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Register Subject'),
-              content: SizedBox(
-                width: 450,
-                child: SingleChildScrollView(
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            'Drop Subject?',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF102A43),
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to drop '
+            '${_subjectCode(subject)} — ${_subjectName(subject)}?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Drop Subject'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    if (!mounted) return;
+
+    setState(() {
+      _working = true;
+    });
+
+    try {
+      await ApiService.dropSubject(token, registrationId);
+
+      if (!mounted) return;
+
+      _showMessage('${_subjectCode(subject)} dropped successfully.');
+
+      await _loadSubjects();
+    } catch (e) {
+      if (!mounted) return;
+
+      _showMessage(e.toString().replaceFirst('Exception: ', ''), error: true);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _working = false;
+        });
+      }
+    }
+  }
+
+  void _showMessage(String message, {bool error = false}) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+    );
+  }
+
+  Widget _subjectCard(
+    Map<String, dynamic> subject, {
+    required bool registered,
+  }) {
+    final code = _subjectCode(subject);
+    final name = _subjectName(subject);
+    final credits = _credits(subject);
+
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: Color(0xFFE3E8F0)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: const Color(0xFFEAF2FF),
+                  child: Icon(
+                    registered
+                        ? Icons.menu_book_rounded
+                        : Icons.add_task_rounded,
+                    color: const Color(0xFF2457A6),
+                  ),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      DropdownButtonFormField<String>(
-                        initialValue: _semester,
-                        decoration: const InputDecoration(
-                          labelText: 'Semester',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'Semester 1',
-                            child: Text('Semester 1'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Semester 2',
-                            child: Text('Semester 2'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Semester 3',
-                            child: Text('Semester 3'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setDialogState(() {
-                            _semester = value;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        initialValue: _academicYear,
-                        decoration: const InputDecoration(
-                          labelText: 'Academic Year',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: '2026/2027',
-                            child: Text('2026/2027'),
-                          ),
-                          DropdownMenuItem(
-                            value: '2027/2028',
-                            child: Text('2027/2028'),
-                          ),
-                          DropdownMenuItem(
-                            value: '2028/2029',
-                            child: Text('2028/2029'),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setDialogState(() {
-                            _academicYear = value;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 20),
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Available Subjects',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      Text(
+                        code,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Color(0xFF2457A6),
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      ..._availableSubjects.map(
-                        (subject) {
-                          return Card(
-                            margin: const EdgeInsets.only(
-                              bottom: 8,
-                            ),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                child: Text(
-                                  '${subject['credit_hours']}',
-                                ),
-                              ),
-                              title: Text(
-                                subject['subject_code'],
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Text(
-                                subject['subject_name'],
-                              ),
-                              trailing: FilledButton(
-                                onPressed: _isRegistering
-                                    ? null
-                                    : () {
-                                        _registerSubject(
-                                          subject,
-                                        );
-                                      },
-                                child: _isRegistering
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child:
-                                            CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      )
-                                    : const Text('Register'),
-                              ),
-                            ),
-                          );
-                        },
+                      const SizedBox(height: 3),
+                      Text(
+                        name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF102A43),
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(dialogContext);
-                  },
-                  child: const Text('Close'),
-                ),
               ],
-            );
-          },
-        );
-      },
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _infoChip(
+                  Icons.school_rounded,
+                  '$credits credit${credits == '1' ? '' : 's'}',
+                ),
+                if (registered)
+                  _infoChip(Icons.calendar_month_rounded, _semester(subject)),
+                if (registered)
+                  _infoChip(Icons.event_rounded, _academicYear(subject)),
+              ],
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: registered
+                  ? OutlinedButton.icon(
+                      onPressed: _working ? null : () => _dropSubject(subject),
+                      icon: const Icon(Icons.remove_circle_outline_rounded),
+                      label: const Text('Drop Subject'),
+                    )
+                  : FilledButton.icon(
+                      onPressed: _working
+                          ? null
+                          : () => _registerSubject(subject),
+                      icon: const Icon(Icons.add_circle_outline_rounded),
+                      label: const Text('Register Subject'),
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  int get _totalCredits {
-    int total = 0;
+  Widget _infoChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F6FA),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: const Color(0xFF5F6B7A)),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFF5F6B7A),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    for (final subject in _subjects) {
-      total +=
-          int.tryParse(
-            subject['credit_hours'].toString(),
-          ) ??
-          0;
+  Widget _section(
+    String title,
+    String subtitle,
+    List<dynamic> subjects, {
+    required bool registered,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 20,
+            color: Color(0xFF102A43),
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: const TextStyle(color: Color(0xFF6B7280), fontSize: 13),
+        ),
+        const SizedBox(height: 12),
+        if (subjects.isEmpty)
+          Card(
+            elevation: 0,
+            margin: EdgeInsets.zero,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+              side: const BorderSide(color: Color(0xFFE3E8F0)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(
+                      registered
+                          ? Icons.menu_book_outlined
+                          : Icons.check_circle_outline_rounded,
+                      size: 44,
+                      color: const Color(0xFF8A94A6),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      registered
+                          ? 'No subjects registered yet.'
+                          : 'No additional subjects are available.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+        else
+          ...subjects.map(
+            (item) => _subjectCard(
+              Map<String, dynamic>.from(item as Map),
+              registered: registered,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _content() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
     }
 
-    return total;
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.cloud_off_rounded,
+                size: 60,
+                color: Color(0xFF2457A6),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Unable to Load Subjects',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Color(0xFF102A43),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Color(0xFF6B7280)),
+              ),
+              const SizedBox(height: 18),
+              FilledButton.icon(
+                onPressed: _loadSubjects,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Try Again'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadSubjects,
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF102A43), Color(0xFF2457A6)],
+              ),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: const Row(
+              children: [
+                CircleAvatar(
+                  radius: 27,
+                  backgroundColor: Color(0x33FFFFFF),
+                  child: Icon(
+                    Icons.menu_book_rounded,
+                    color: Colors.white,
+                    size: 29,
+                  ),
+                ),
+                SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Subject Registration',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Manage your academic subjects',
+                        style: TextStyle(color: Colors.white70, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 26),
+          _section(
+            'My Registered Subjects',
+            'Subjects currently registered to your account',
+            _registeredSubjects,
+            registered: true,
+          ),
+          const SizedBox(height: 28),
+          _section(
+            'Available Subjects',
+            'Subjects you can register for',
+            _availableSubjects,
+            registered: false,
+          ),
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
+        backgroundColor: const Color(0xFFF5F7FA),
+        elevation: 0,
         title: const Text(
           'My Subjects',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
+            color: Color(0xFF102A43),
+            fontWeight: FontWeight.w800,
           ),
         ),
         actions: [
           IconButton(
-            onPressed: _isLoading ? null : _loadSubjects,
-            tooltip: 'Refresh',
-            icon: const Icon(Icons.refresh),
+            onPressed: _working ? null : _loadSubjects,
+            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF102A43)),
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadSubjects,
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(),
-              )
-            : _subjects.isEmpty
-                ? ListView(
-                    physics:
-                        const AlwaysScrollableScrollPhysics(),
-                    children: const [
-                      SizedBox(height: 150),
-                      Icon(
-                        Icons.menu_book_outlined,
-                        size: 72,
-                        color: Colors.grey,
-                      ),
-                      SizedBox(height: 16),
-                      Center(
-                        child: Text(
-                          'No subjects registered',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Center(
-                        child: Text(
-                          'Register a subject to get started.',
-                        ),
-                      ),
-                    ],
-                  )
-                : ListView(
-                    padding: const EdgeInsets.all(20),
-                    children: [
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Row(
-                            children: [
-                              const CircleAvatar(
-                                radius: 28,
-                                child: Icon(
-                                  Icons.school_outlined,
-                                  size: 30,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      widget.user['full_name'] ??
-                                          'Student',
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight:
-                                            FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      '${_subjects.length} subject(s) • '
-                                      '$_totalCredits credit hours',
-                                      style: TextStyle(
-                                        color:
-                                            Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      ..._subjects.map(
-                        (subject) {
-                          return Card(
-                            margin: const EdgeInsets.only(
-                              bottom: 12,
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 26,
-                                    child: Text(
-                                      '${subject['credit_hours']}',
-                                      style:
-                                          const TextStyle(
-                                        fontWeight:
-                                            FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment
-                                              .start,
-                                      children: [
-                                        Text(
-                                          subject['subject_code'] ??
-                                              '',
-                                          style:
-                                              const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight:
-                                                FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          subject['subject_name'] ??
-                                              '',
-                                          style:
-                                              const TextStyle(
-                                            fontSize: 15,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Wrap(
-                                          spacing: 8,
-                                          runSpacing: 6,
-                                          children: [
-                                            Chip(
-                                              label: Text(
-                                                subject[
-                                                        'semester'] ??
-                                                    '',
-                                              ),
-                                            ),
-                                            Chip(
-                                              label: Text(
-                                                subject[
-                                                        'academic_year'] ??
-                                                    '',
-                                              ),
-                                            ),
-                                            Chip(
-                                              label: Text(
-                                                subject[
-                                                        'status'] ??
-                                                    '',
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  IconButton(
-                                    onPressed: () {
-                                      _dropSubject(subject);
-                                    },
-                                    tooltip: 'Drop subject',
-                                    icon: const Icon(
-                                      Icons.delete_outline,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showRegisterSubjectDialog,
-        icon: const Icon(Icons.add),
-        label: const Text('Register Subject'),
+      body: Stack(
+        children: [
+          _content(),
+          if (_working)
+            const Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              child: LinearProgressIndicator(),
+            ),
+        ],
       ),
     );
   }

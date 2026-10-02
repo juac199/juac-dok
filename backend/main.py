@@ -26,6 +26,7 @@ from backend.schemas import (
     EnrollmentCreate,
 )
 from backend.security import require_role
+from backend.fees_payments import router as fees_payments_router
 from backend.token import create_access_token
 
 
@@ -38,6 +39,8 @@ app = FastAPI(
     version="1.0.0",
 )
 
+app.include_router(fees_payments_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -45,6 +48,98 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ============================================================
+# STUDENT SERVICES
+# ============================================================
+
+@app.get("/student/visa")
+def get_student_visa(
+    current_user: dict = Depends(require_role("student")),
+):
+    from backend.database import get_connection
+
+    connection = get_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        cursor.execute(
+            """
+            SELECT
+                id,
+                student_id,
+                passport_number,
+                visa_type,
+                visa_status,
+                issue_date,
+                expiry_date,
+                notes
+            FROM student_visa
+            WHERE student_id = (
+                SELECT id
+                FROM students
+                WHERE user_id = %s
+                LIMIT 1
+            )
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (current_user["user_id"],),
+        )
+
+        visa = cursor.fetchone()
+
+        cursor.close()
+        connection.close()
+
+        if not visa:
+            return {
+                "student_id": None,
+                "visa": None,
+            }
+
+        return {
+            "student_id": visa["student_id"],
+            "visa": visa,
+        }
+
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
+        try:
+            connection.close()
+        except Exception:
+            pass
+
+
+@app.get("/student/announcements")
+def get_student_announcements(
+    current_user: dict = Depends(require_role("student")),
+):
+    from backend.database import get_connection
+
+    connection = get_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        cursor.execute(
+            """
+            SELECT *
+            FROM announcements
+            ORDER BY
+                created_at DESC,
+                id DESC
+            """
+        )
+
+        return cursor.fetchall()
+
+    finally:
+        cursor.close()
+        connection.close()
 
 
 # ============================================================
@@ -134,11 +229,11 @@ def get_students(
                 s.student_number,
                 u.full_name,
                 u.email,
-                s.date_of_birth,
+                NULL AS date_of_birth,
                 s.phone,
-                s.address,
-                s.program,
-                s.enrollment_date
+                NULL AS address,
+                s.programme AS program,
+                NULL AS enrollment_date
             FROM students s
             JOIN users u
                 ON s.user_id = u.id
@@ -168,11 +263,11 @@ def get_my_student_profile(
                 s.student_number,
                 u.full_name,
                 u.email,
-                s.date_of_birth,
+                NULL AS date_of_birth,
                 s.phone,
-                s.address,
-                s.program,
-                s.enrollment_date
+                NULL AS address,
+                s.programme AS program,
+                NULL AS enrollment_date
             FROM students s
             JOIN users u
                 ON s.user_id = u.id
@@ -252,11 +347,11 @@ def get_student(
                 s.student_number,
                 u.full_name,
                 u.email,
-                s.date_of_birth,
+                NULL AS date_of_birth,
                 s.phone,
-                s.address,
-                s.program,
-                s.enrollment_date
+                NULL AS address,
+                s.programme AS program,
+                NULL AS enrollment_date
             FROM students s
             JOIN users u
                 ON s.user_id = u.id
@@ -335,22 +430,32 @@ def create_student(
             INSERT INTO students (
                 user_id,
                 student_number,
-                date_of_birth,
+                first_name,
+                last_name,
+                email,
                 phone,
-                address,
-                program,
-                enrollment_date
+                programme,
+                faculty,
+                year_level,
+                status
             )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 user_id,
                 student.student_number,
-                student.date_of_birth,
+                student.full_name.split(maxsplit=1)[0],
+                (
+                    student.full_name.split(maxsplit=1)[1]
+                    if len(student.full_name.split(maxsplit=1)) > 1
+                    else ""
+                ),
+                student.email,
                 student.phone,
-                student.address,
                 student.program,
-                student.enrollment_date,
+                "Faculty of Computing",
+                1,
+                "active",
             ),
         )
 
@@ -454,20 +559,24 @@ def update_student(
             UPDATE students
             SET
                 student_number = %s,
-                date_of_birth = %s,
+                first_name = %s,
+                last_name = %s,
+                email = %s,
                 phone = %s,
-                address = %s,
-                program = %s,
-                enrollment_date = %s
+                programme = %s
             WHERE id = %s
             """,
             (
                 student.student_number,
-                student.date_of_birth,
+                student.full_name.split(maxsplit=1)[0],
+                (
+                    student.full_name.split(maxsplit=1)[1]
+                    if len(student.full_name.split(maxsplit=1)) > 1
+                    else ""
+                ),
+                student.email,
                 student.phone,
-                student.address,
                 student.program,
-                student.enrollment_date,
                 student_id,
             ),
         )
@@ -1120,7 +1229,7 @@ def get_my_subjects(
                 ss.semester,
                 ss.academic_year,
                 ss.status,
-                ss.created_at,
+                ss.registered_at,
                 s.id AS subject_id,
                 s.subject_code,
                 s.subject_name,
@@ -1132,7 +1241,7 @@ def get_my_subjects(
             JOIN subjects s
                 ON ss.subject_id = s.id
             WHERE st.user_id = %s
-            ORDER BY ss.created_at DESC
+            ORDER BY ss.registered_at DESC
             """,
             (current_user["user_id"],),
         )
@@ -1891,7 +2000,7 @@ def get_my_attendance(
                 a.id,
                 a.attendance_date,
                 a.status,
-                a.remarks,
+                NULL AS remarks,
                 a.subject_id,
                 s.subject_code,
                 s.subject_name,
@@ -2028,8 +2137,8 @@ def get_results(
                 sub.subject_code,
                 sub.subject_name,
                 sub.credit_hours,
-                r.semester,
-                r.academic_year,
+                NULL AS semester,
+                NULL AS academic_year,
                 r.marks,
                 r.grade,
                 r.grade_point,
@@ -2439,8 +2548,8 @@ def get_my_results(
             """
             SELECT
                 r.id,
-                r.semester,
-                r.academic_year,
+                NULL AS semester,
+                NULL AS academic_year,
                 r.marks,
                 r.grade,
                 r.grade_point,
@@ -2457,8 +2566,6 @@ def get_my_results(
             WHERE s.user_id = %s
               AND r.status = 'published'
             ORDER BY
-                r.academic_year DESC,
-                r.semester,
                 sub.subject_code
             """,
             (current_user["user_id"],),
@@ -2486,8 +2593,8 @@ def get_my_gpa(
         cursor.execute(
             """
             SELECT
-                r.semester,
-                r.academic_year,
+                NULL AS semester,
+                NULL AS academic_year,
                 r.grade_point,
                 s.credit_hours
             FROM results r
@@ -2498,8 +2605,6 @@ def get_my_gpa(
             WHERE st.user_id = %s
               AND r.status = 'published'
             ORDER BY
-                r.academic_year,
-                r.semester,
                 r.id
             """,
             (current_user["user_id"],),

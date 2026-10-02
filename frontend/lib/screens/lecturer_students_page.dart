@@ -1,46 +1,34 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
 
+import '../services/api_service.dart';
 
 class LecturerStudentsPage extends StatefulWidget {
   final String token;
 
-  const LecturerStudentsPage({
-    super.key,
-    required this.token,
-  });
+  const LecturerStudentsPage({super.key, required this.token});
 
   @override
-  State<LecturerStudentsPage> createState() =>
-      _LecturerStudentsPageState();
+  State<LecturerStudentsPage> createState() => _LecturerStudentsPageState();
 }
 
-class _LecturerStudentsPageState
-    extends State<LecturerStudentsPage> {
+class _LecturerStudentsPageState extends State<LecturerStudentsPage> {
   late Future<List<dynamic>> _subjectsFuture;
 
   @override
   void initState() {
     super.initState();
-    _subjectsFuture =
-        ApiService.getMyLecturerSubjects(widget.token);
+    _subjectsFuture = ApiService.getMyLecturerSubjects(widget.token);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Students'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Students'), centerTitle: true),
       body: FutureBuilder<List<dynamic>>(
         future: _subjectsFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -101,18 +89,11 @@ class _LecturerStudentsPageState
                       style: const TextStyle(fontSize: 16),
                     ),
                   ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 18,
-                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 18),
                   onTap: () {
                     if (subjectId == null) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Subject ID not found.',
-                          ),
-                        ),
+                        const SnackBar(content: Text('Subject ID not found.')),
                       );
                       return;
                     }
@@ -120,8 +101,7 @@ class _LecturerStudentsPageState
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            SubjectStudentsPage(
+                        builder: (context) => SubjectStudentsPage(
                           token: widget.token,
                           subjectId: subjectId,
                           subjectName:
@@ -155,12 +135,10 @@ class SubjectStudentsPage extends StatefulWidget {
   });
 
   @override
-  State<SubjectStudentsPage> createState() =>
-      _SubjectStudentsPageState();
+  State<SubjectStudentsPage> createState() => _SubjectStudentsPageState();
 }
 
-class _SubjectStudentsPageState
-    extends State<SubjectStudentsPage> {
+class _SubjectStudentsPageState extends State<SubjectStudentsPage> {
   late Future<List<dynamic>> _studentsFuture;
 
   @override
@@ -187,18 +165,12 @@ class _SubjectStudentsPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.subjectName),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text(widget.subjectName), centerTitle: true),
       body: FutureBuilder<List<dynamic>>(
         future: _studentsFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -241,9 +213,7 @@ class _SubjectStudentsPageState
                     leading: CircleAvatar(
                       child: Text(
                         '${index + 1}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                     title: Text(
@@ -256,8 +226,7 @@ class _SubjectStudentsPageState
                     subtitle: Padding(
                       padding: const EdgeInsets.only(top: 6),
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'Student Number: '

@@ -1,67 +1,86 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/services/api_service.dart';
+
+import '../services/api_service.dart';
 
 class StudentAttendancePage extends StatefulWidget {
-  final String token;
+  final Map<String, dynamic> user;
 
-  const StudentAttendancePage({
-    super.key,
-    required this.token,
-  });
+  const StudentAttendancePage({super.key, required this.user});
 
   @override
-  State<StudentAttendancePage> createState() =>
-      _StudentAttendancePageState();
+  State<StudentAttendancePage> createState() => _StudentAttendancePageState();
 }
 
-class _StudentAttendancePageState
-    extends State<StudentAttendancePage> {
-  bool isLoading = true;
-  String? errorMessage;
+class _StudentAttendancePageState extends State<StudentAttendancePage> {
+  bool _loading = true;
+  String? _error;
 
-  Map<String, dynamic> summary = {};
-  List<dynamic> attendanceRecords = [];
+  List<dynamic> _attendance = [];
+  Map<String, dynamic> _summary = {};
+
+  String get token => widget.user['access_token'] as String;
 
   @override
   void initState() {
     super.initState();
-    loadAttendance();
+    _loadAttendance();
   }
 
-  Future<void> loadAttendance() async {
+  Future<void> _loadAttendance() async {
     setState(() {
-      isLoading = true;
-      errorMessage = null;
+      _loading = true;
+      _error = null;
     });
 
     try {
-      final attendance =
-          await ApiService.getMyAttendance(widget.token);
+      final results = await Future.wait([
+        ApiService.getMyAttendance(token),
+        ApiService.getMyAttendanceSummary(token),
+      ]);
 
-      final attendanceSummary =
-          await ApiService.getMyAttendanceSummary(widget.token);
+      final attendance = results[0] as List<dynamic>;
+      final summary = results[1] as Map<String, dynamic>;
 
       if (!mounted) return;
 
       setState(() {
-        attendanceRecords = attendance;
-        summary = attendanceSummary;
-        isLoading = false;
+        _attendance = attendance;
+        _summary = summary;
+        _loading = false;
       });
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
-        isLoading = false;
-        errorMessage = e.toString().replaceFirst(
-          'Exception: ',
-          '',
-        );
+        _loading = false;
+        _error = e.toString().replaceFirst('Exception: ', '');
       });
     }
   }
 
-  Color getStatusColor(String status) {
+  int _numberValue(String key) {
+    final value = _summary[key];
+
+    if (value is num) {
+      return value.toInt();
+    }
+
+    return int.tryParse(value?.toString() ?? '0') ?? 0;
+  }
+
+  double _attendancePercentage() {
+    final total = _numberValue('total_classes');
+
+    if (total == 0) {
+      return 0;
+    }
+
+    final present = _numberValue('present_classes');
+
+    return (present / total) * 100;
+  }
+
+  Color _statusColor(String status) {
     switch (status.toLowerCase()) {
       case 'present':
         return Colors.green;
@@ -70,504 +89,435 @@ class _StudentAttendancePageState
       case 'late':
         return Colors.orange;
       default:
-        return Colors.grey;
+        return Colors.blueGrey;
     }
   }
 
-  IconData getStatusIcon(String status) {
+  IconData _statusIcon(String status) {
     switch (status.toLowerCase()) {
       case 'present':
-        return Icons.check_circle;
+        return Icons.check_circle_rounded;
       case 'absent':
-        return Icons.cancel;
+        return Icons.cancel_rounded;
       case 'late':
-        return Icons.access_time;
+        return Icons.schedule_rounded;
       default:
-        return Icons.help_outline;
+        return Icons.info_rounded;
     }
   }
 
-  String formatDate(String date) {
-    try {
-      final parsedDate = DateTime.parse(date);
-
-      return '${parsedDate.day.toString().padLeft(2, '0')}/'
-          '${parsedDate.month.toString().padLeft(2, '0')}/'
-          '${parsedDate.year}';
-    } catch (_) {
-      return date;
+  String _formatDate(dynamic value) {
+    if (value == null) {
+      return 'Date unavailable';
     }
+
+    final date = DateTime.tryParse(value.toString());
+
+    if (date == null) {
+      return value.toString();
+    }
+
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final percentage = _attendancePercentage();
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F7FA),
       appBar: AppBar(
         title: const Text(
-          'My Attendance',
+          'Attendance',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF14213D),
+        elevation: 0,
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadAttendance,
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+            ? _buildError()
+            : _buildContent(percentage),
+      ),
+    );
+  }
+
+  Widget _buildContent(double percentage) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      children: [
+        _buildOverviewCard(percentage),
+        const SizedBox(height: 24),
+        const Text(
+          'Attendance Summary',
           style: TextStyle(
-            fontWeight: FontWeight.bold,
+            fontSize: 19,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF14213D),
           ),
         ),
-        actions: [
-          IconButton(
-            onPressed: isLoading ? null : loadAttendance,
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh',
+        const SizedBox(height: 12),
+        _buildSummaryGrid(),
+        const SizedBox(height: 28),
+        const Text(
+          'Attendance Records',
+          style: TextStyle(
+            fontSize: 19,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF14213D),
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (_attendance.isEmpty)
+          _buildEmptyState()
+        else
+          ..._attendance.map(_buildAttendanceCard),
+      ],
+    );
+  }
+
+  Widget _buildOverviewCard(double percentage) {
+    return Container(
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF173B72), Color(0xFF2F6DB2)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.10),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : errorMessage != null
-              ? buildErrorState()
-              : buildAttendancePage(),
-    );
-  }
-
-  Widget buildErrorState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red,
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Unable to load attendance',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              errorMessage!,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: loadAttendance,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Try Again'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget buildAttendancePage() {
-    final double percentage =
-        (summary['attendance_percentage'] ?? 0).toDouble();
-
-    final int totalClasses =
-        summary['total_classes'] ?? 0;
-
-    final int presentClasses =
-        summary['present_classes'] ?? 0;
-
-    final int absentClasses =
-        summary['absent_classes'] ?? 0;
-
-    final int lateClasses =
-        summary['late_classes'] ?? 0;
-
-    return RefreshIndicator(
-      onRefresh: loadAttendance,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
+      child: Row(
         children: [
-          buildAttendanceOverview(
-            percentage,
-            totalClasses,
-          ),
-
-          const SizedBox(height: 20),
-
-          buildStatistics(
-            totalClasses,
-            presentClasses,
-            absentClasses,
-            lateClasses,
-          ),
-
-          const SizedBox(height: 28),
-
-          const Text(
-            'Attendance Records',
-            style: TextStyle(
-              fontSize: 21,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          if (attendanceRecords.isEmpty)
-            buildEmptyState()
-          else
-            ...attendanceRecords.map(
-              (record) => buildAttendanceRecord(record),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget buildAttendanceOverview(
-    double percentage,
-    int totalClasses,
-  ) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const Text(
-              'Overall Attendance',
-              style: TextStyle(
-                fontSize: 19,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            SizedBox(
-              width: 150,
-              height: 150,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 150,
-                    height: 150,
-                    child: CircularProgressIndicator(
-                      value:
-                          (percentage / 100).clamp(0.0, 1.0),
-                      strokeWidth: 12,
-                      backgroundColor:
-                          Colors.grey.shade200,
+          SizedBox(
+            width: 92,
+            height: 92,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 88,
+                  height: 88,
+                  child: CircularProgressIndicator(
+                    value: (percentage / 100).clamp(0.0, 1.0),
+                    strokeWidth: 8,
+                    backgroundColor: Colors.white24,
+                    valueColor: const AlwaysStoppedAnimation<Color>(
+                      Colors.white,
                     ),
                   ),
-
-                  Column(
-                    mainAxisAlignment:
-                        MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '${percentage.toStringAsFixed(1)}%',
-                        style: const TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        '$totalClasses classes',
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
+                ),
+                Text(
+                  '${percentage.toStringAsFixed(0)}%',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-
-            const SizedBox(height: 16),
-
-            Text(
-              getAttendanceMessage(percentage),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey.shade700,
-              ),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Overall Attendance',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  '${_numberValue('present_classes')} of '
+                  '${_numberValue('total_classes')} classes attended',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Keep track of your class attendance.',
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  String getAttendanceMessage(double percentage) {
-    if (percentage >= 90) {
-      return 'Excellent attendance. Keep it up!';
-    }
-
-    if (percentage >= 80) {
-      return 'Good attendance. Keep attending regularly.';
-    }
-
-    if (percentage >= 75) {
-      return 'Your attendance is acceptable.';
-    }
-
-    return 'Your attendance is below the recommended level.';
-  }
-
-  Widget buildStatistics(
-    int total,
-    int present,
-    int absent,
-    int late,
-  ) {
+  Widget _buildSummaryGrid() {
     return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
+      crossAxisCount: 3,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.6,
+      crossAxisSpacing: 10,
+      childAspectRatio: 0.95,
       children: [
-        buildStatisticCard(
-          'Total Classes',
-          total.toString(),
-          Icons.school,
-          Colors.blue,
-        ),
-        buildStatisticCard(
+        _summaryCard(
           'Present',
-          present.toString(),
-          Icons.check_circle,
+          _numberValue('present_classes'),
+          Icons.check_circle_rounded,
           Colors.green,
         ),
-        buildStatisticCard(
+        _summaryCard(
           'Absent',
-          absent.toString(),
-          Icons.cancel,
+          _numberValue('absent_classes'),
+          Icons.cancel_rounded,
           Colors.red,
         ),
-        buildStatisticCard(
+        _summaryCard(
           'Late',
-          late.toString(),
-          Icons.access_time,
+          _numberValue('late_classes'),
+          Icons.schedule_rounded,
           Colors.orange,
         ),
       ],
     );
   }
 
-  Widget buildStatisticCard(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Card(
-      elevation: 1,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: color,
-              size: 30,
+  Widget _summaryCard(String title, int value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: color, size: 27),
+          const SizedBox(height: 8),
+          Text(
+            value.toString(),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF14213D),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                mainAxisAlignment:
-                    MainAxisAlignment.center,
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    title,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.black54,
+              fontWeight: FontWeight.w600,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget buildAttendanceRecord(dynamic record) {
-    final String status =
-        (record['status'] ?? 'unknown').toString();
+  Widget _buildAttendanceCard(dynamic item) {
+    final record = item as Map<String, dynamic>;
 
-    final String subjectCode =
-        (record['subject_code'] ?? 'Unknown').toString();
+    final subjectCode = record['subject_code']?.toString() ?? 'Unknown Subject';
+    final subjectName =
+        record['subject_name']?.toString() ?? 'Subject unavailable';
+    final status = record['status']?.toString() ?? 'unknown';
+    final remarks = record['remarks']?.toString();
+    final creditHours = record['credit_hours']?.toString() ?? '-';
 
-    final String subjectName =
-        (record['subject_name'] ?? 'Unknown Subject')
-            .toString();
+    final statusColor = _statusColor(status);
 
-    final String date =
-        (record['attendance_date'] ?? '').toString();
-
-    final String remarks =
-        (record['remarks'] ?? '').toString();
-
-    final Color statusColor =
-        getStatusColor(status);
-
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color:
-                    statusColor.withValues(alpha: 0.12),
-                borderRadius:
-                    BorderRadius.circular(12),
-              ),
-              child: Icon(
-                getStatusIcon(status),
-                color: statusColor,
-              ),
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.045),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(14),
             ),
-
-            const SizedBox(width: 14),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    subjectCode,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+            child: Icon(_statusIcon(status), color: statusColor, size: 25),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  subjectCode,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF14213D),
                   ),
-
-                  const SizedBox(height: 4),
-
-                  Text(
-                    subjectName,
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                    ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subjectName,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w500,
                   ),
-
-                  const SizedBox(height: 8),
-
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.calendar_today,
-                        size: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        formatDate(date),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  if (remarks.isNotEmpty) ...[
-                    const SizedBox(height: 6),
+                ),
+                const SizedBox(height: 9),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 5,
+                  children: [
                     Text(
-                      remarks,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
+                      _formatDate(record['attendance_date']),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    Text(
+                      '$creditHours credit hours',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
                       ),
                     ),
                   ],
-                ],
-              ),
-            ),
-
-            const SizedBox(width: 8),
-
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 6,
-              ),
-              decoration: BoxDecoration(
-                color:
-                    statusColor.withValues(alpha: 0.12),
-                borderRadius:
-                    BorderRadius.circular(20),
-              ),
-              child: Text(
-                status.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: statusColor,
                 ),
+                if (remarks != null && remarks.trim().isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    remarks,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              status.toUpperCase(),
+              style: TextStyle(
+                color: statusColor,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.4,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget buildEmptyState() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          children: [
-            Icon(
-              Icons.event_busy,
-              size: 60,
-              color: Colors.grey.shade400,
-            ),
-
-            const SizedBox(height: 16),
-
-            const Text(
-              'No attendance records yet',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              'Your attendance records will appear here.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-              ),
-            ),
-          ],
-        ),
+  Widget _buildEmptyState() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 35),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
       ),
+      child: const Column(
+        children: [
+          Icon(Icons.event_busy_rounded, size: 52, color: Colors.black26),
+          SizedBox(height: 12),
+          Text(
+            'No attendance records yet',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF14213D),
+            ),
+          ),
+          SizedBox(height: 5),
+          Text(
+            'Your attendance records will appear here.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Colors.black54),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildError() {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(24),
+      children: [
+        const SizedBox(height: 80),
+        const Icon(Icons.cloud_off_rounded, size: 58, color: Colors.black26),
+        const SizedBox(height: 18),
+        const Text(
+          'Unable to load attendance',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 19,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF14213D),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _error ?? 'Something went wrong.',
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 13, color: Colors.black54),
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: FilledButton.icon(
+            onPressed: _loadAttendance,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Try Again'),
+          ),
+        ),
+      ],
     );
   }
 }

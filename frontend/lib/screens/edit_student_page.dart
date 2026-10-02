@@ -6,19 +6,13 @@ class EditStudentPage extends StatefulWidget {
   final Map<String, dynamic> user;
   final Map<String, dynamic> student;
 
-  const EditStudentPage({
-    super.key,
-    required this.user,
-    required this.student,
-  });
+  const EditStudentPage({super.key, required this.user, required this.student});
 
   @override
-  State<EditStudentPage> createState() =>
-      _EditStudentPageState();
+  State<EditStudentPage> createState() => _EditStudentPageState();
 }
 
-class _EditStudentPageState
-    extends State<EditStudentPage> {
+class _EditStudentPageState extends State<EditStudentPage> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _fullNameController;
@@ -71,13 +65,9 @@ class _EditStudentPageState
       text: widget.student['enrollment_date'] ?? '',
     );
 
-    _dateOfBirth = _parseDate(
-      widget.student['date_of_birth'],
-    );
+    _dateOfBirth = _parseDate(widget.student['date_of_birth']);
 
-    _enrollmentDate = _parseDate(
-      widget.student['enrollment_date'],
-    );
+    _enrollmentDate = _parseDate(widget.student['enrollment_date']);
   }
 
   @override
@@ -99,9 +89,7 @@ class _EditStudentPageState
       return null;
     }
 
-    return DateTime.tryParse(
-      value.toString(),
-    );
+    return DateTime.tryParse(value.toString());
   }
 
   String _formatDate(DateTime date) {
@@ -115,8 +103,7 @@ class _EditStudentPageState
   Future<void> _selectDateOfBirth() async {
     final selectedDate = await showDatePicker(
       context: context,
-      initialDate:
-          _dateOfBirth ?? DateTime(2000),
+      initialDate: _dateOfBirth ?? DateTime(2000),
       firstDate: DateTime(1950),
       lastDate: DateTime.now(),
     );
@@ -127,16 +114,14 @@ class _EditStudentPageState
 
     setState(() {
       _dateOfBirth = selectedDate;
-      _dateOfBirthController.text =
-          _formatDate(selectedDate);
+      _dateOfBirthController.text = _formatDate(selectedDate);
     });
   }
 
   Future<void> _selectEnrollmentDate() async {
     final selectedDate = await showDatePicker(
       context: context,
-      initialDate:
-          _enrollmentDate ?? DateTime.now(),
+      initialDate: _enrollmentDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
     );
@@ -147,14 +132,12 @@ class _EditStudentPageState
 
     setState(() {
       _enrollmentDate = selectedDate;
-      _enrollmentDateController.text =
-          _formatDate(selectedDate);
+      _enrollmentDateController.text = _formatDate(selectedDate);
     });
   }
 
   String? _requiredValidator(String? value) {
-    if (value == null ||
-        value.trim().isEmpty) {
+    if (value == null || value.trim().isEmpty) {
       return 'This field is required.';
     }
 
@@ -162,8 +145,7 @@ class _EditStudentPageState
   }
 
   String? _emailValidator(String? value) {
-    if (value == null ||
-        value.trim().isEmpty) {
+    if (value == null || value.trim().isEmpty) {
       return 'Email is required.';
     }
 
@@ -180,16 +162,12 @@ class _EditStudentPageState
     }
 
     if (_dateOfBirth == null) {
-      _showMessage(
-        'Please select the date of birth.',
-      );
+      _showMessage('Please select the date of birth.');
       return;
     }
 
     if (_enrollmentDate == null) {
-      _showMessage(
-        'Please select the enrollment date.',
-      );
+      _showMessage('Please select the enrollment date.');
       return;
     }
 
@@ -198,41 +176,26 @@ class _EditStudentPageState
     });
 
     try {
-      final token =
-          widget.user['access_token'];
+      final token = widget.user['access_token'];
 
       final student = {
-        'full_name':
-            _fullNameController.text.trim(),
-        'email':
-            _emailController.text.trim(),
-        'student_number':
-            _studentNumberController.text.trim(),
-        'date_of_birth':
-            _formatDate(_dateOfBirth!),
-        'phone':
-            _phoneController.text.trim(),
-        'address':
-            _addressController.text.trim(),
-        'program':
-            _programController.text.trim(),
-        'enrollment_date':
-            _formatDate(_enrollmentDate!),
+        'full_name': _fullNameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'student_number': _studentNumberController.text.trim(),
+        'date_of_birth': _formatDate(_dateOfBirth!),
+        'phone': _phoneController.text.trim(),
+        'address': _addressController.text.trim(),
+        'program': _programController.text.trim(),
+        'enrollment_date': _formatDate(_enrollmentDate!),
       };
 
-      await ApiService.updateStudent(
-        token,
-        widget.student['id'],
-        student,
-      );
+      await ApiService.updateStudent(token, widget.student['id'], student);
 
       if (!mounted) {
         return;
       }
 
-      _showMessage(
-        'Student updated successfully.',
-      );
+      _showMessage('Student updated successfully.');
 
       Navigator.pop(context, true);
     } catch (e) {
@@ -240,12 +203,7 @@ class _EditStudentPageState
         return;
       }
 
-      _showMessage(
-        e.toString().replaceFirst(
-              'Exception: ',
-              '',
-            ),
-      );
+      _showMessage(e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) {
         setState(() {
@@ -257,11 +215,7 @@ class _EditStudentPageState
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(context)
-        .showSnackBar(
-      SnackBar(
-        content: Text(message),
-      ),
-    );
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _buildTextField({
@@ -293,36 +247,28 @@ class _EditStudentPageState
       appBar: AppBar(
         title: const Text(
           'Edit Student',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: ConstrainedBox(
-            constraints:
-                const BoxConstraints(
-              maxWidth: 800,
-            ),
+            constraints: const BoxConstraints(maxWidth: 800),
             child: Card(
               elevation: 3,
               child: Padding(
-                padding:
-                    const EdgeInsets.all(28),
+                padding: const EdgeInsets.all(28),
                 child: Form(
                   key: _formKey,
                   child: Column(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         'Edit Student Information',
                         style: TextStyle(
                           fontSize: 26,
-                          fontWeight:
-                              FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
 
@@ -331,8 +277,7 @@ class _EditStudentPageState
                       Text(
                         'Update the student details below.',
                         style: TextStyle(
-                          color:
-                              Colors.grey.shade600,
+                          color: Colors.grey.shade600,
                           fontSize: 15,
                         ),
                       ),
@@ -340,151 +285,105 @@ class _EditStudentPageState
                       const SizedBox(height: 28),
 
                       _buildTextField(
-                        controller:
-                            _fullNameController,
+                        controller: _fullNameController,
                         label: 'Full Name',
-                        icon:
-                            Icons.person_outline,
-                        hint:
-                            'Enter full name',
-                        validator:
-                            _requiredValidator,
+                        icon: Icons.person_outline,
+                        hint: 'Enter full name',
+                        validator: _requiredValidator,
                       ),
 
                       const SizedBox(height: 18),
 
                       _buildTextField(
-                        controller:
-                            _emailController,
+                        controller: _emailController,
                         label: 'Email',
-                        icon:
-                            Icons.email_outlined,
-                        hint:
-                            'student@example.com',
-                        keyboardType:
-                            TextInputType
-                                .emailAddress,
-                        validator:
-                            _emailValidator,
+                        icon: Icons.email_outlined,
+                        hint: 'student@example.com',
+                        keyboardType: TextInputType.emailAddress,
+                        validator: _emailValidator,
                       ),
 
                       const SizedBox(height: 18),
 
                       _buildTextField(
-                        controller:
-                            _studentNumberController,
+                        controller: _studentNumberController,
                         label: 'Student Number',
-                        icon:
-                            Icons.badge_outlined,
+                        icon: Icons.badge_outlined,
                         hint: 'e.g. STU001',
-                        validator:
-                            _requiredValidator,
+                        validator: _requiredValidator,
                       ),
 
                       const SizedBox(height: 18),
 
                       TextFormField(
-                        controller:
-                            _dateOfBirthController,
+                        controller: _dateOfBirthController,
                         readOnly: true,
                         validator: (value) {
-                          if (_dateOfBirth ==
-                              null) {
+                          if (_dateOfBirth == null) {
                             return 'Date of birth is required.';
                           }
 
                           return null;
                         },
-                        onTap:
-                            _selectDateOfBirth,
-                        decoration:
-                            const InputDecoration(
-                          labelText:
-                              'Date of Birth',
-                          prefixIcon: Icon(
-                            Icons.calendar_today,
-                          ),
-                          suffixIcon: Icon(
-                            Icons.arrow_drop_down,
-                          ),
-                          border:
-                              OutlineInputBorder(),
+                        onTap: _selectDateOfBirth,
+                        decoration: const InputDecoration(
+                          labelText: 'Date of Birth',
+                          prefixIcon: Icon(Icons.calendar_today),
+                          suffixIcon: Icon(Icons.arrow_drop_down),
+                          border: OutlineInputBorder(),
                         ),
                       ),
 
                       const SizedBox(height: 18),
 
                       _buildTextField(
-                        controller:
-                            _phoneController,
+                        controller: _phoneController,
                         label: 'Phone',
-                        icon:
-                            Icons.phone_outlined,
-                        hint:
-                            '+60 12 345 6789',
-                        keyboardType:
-                            TextInputType.phone,
-                        validator:
-                            _requiredValidator,
+                        icon: Icons.phone_outlined,
+                        hint: '+60 12 345 6789',
+                        keyboardType: TextInputType.phone,
+                        validator: _requiredValidator,
                       ),
 
                       const SizedBox(height: 18),
 
                       _buildTextField(
-                        controller:
-                            _addressController,
+                        controller: _addressController,
                         label: 'Address',
-                        icon:
-                            Icons.home_outlined,
-                        hint:
-                            'Enter student address',
+                        icon: Icons.home_outlined,
+                        hint: 'Enter student address',
                         maxLines: 3,
-                        validator:
-                            _requiredValidator,
+                        validator: _requiredValidator,
                       ),
 
                       const SizedBox(height: 18),
 
                       _buildTextField(
-                        controller:
-                            _programController,
+                        controller: _programController,
                         label: 'Program',
-                        icon:
-                            Icons.school_outlined,
-                        hint:
-                            'e.g. Bachelor of Computer Science',
-                        validator:
-                            _requiredValidator,
+                        icon: Icons.school_outlined,
+                        hint: 'e.g. Bachelor of Computer Science',
+                        validator: _requiredValidator,
                       ),
 
                       const SizedBox(height: 18),
 
                       TextFormField(
-                        controller:
-                            _enrollmentDateController,
+                        controller: _enrollmentDateController,
                         readOnly: true,
                         validator: (value) {
-                          if (_enrollmentDate ==
-                              null) {
+                          if (_enrollmentDate == null) {
                             return 'Enrollment date is required.';
                           }
 
                           return null;
                         },
-                        onTap:
-                            _selectEnrollmentDate,
-                        decoration:
-                            const InputDecoration(
-                          labelText:
-                              'Enrollment Date',
-                          prefixIcon: Icon(
-                            Icons.event_outlined,
-                          ),
-                          suffixIcon: Icon(
-                            Icons.arrow_drop_down,
-                          ),
-                          border:
-                              OutlineInputBorder(),
+                        onTap: _selectEnrollmentDate,
+                        decoration: const InputDecoration(
+                          labelText: 'Enrollment Date',
+                          prefixIcon: Icon(Icons.event_outlined),
+                          suffixIcon: Icon(Icons.arrow_drop_down),
+                          border: OutlineInputBorder(),
                         ),
                       ),
 
@@ -493,72 +392,38 @@ class _EditStudentPageState
                       Row(
                         children: [
                           Expanded(
-                            child:
-                                OutlinedButton(
-                              onPressed:
-                                  _isLoading
-                                      ? null
-                                      : () {
-                                          Navigator
-                                              .pop(
-                                            context,
-                                          );
-                                        },
-                              style:
-                                  OutlinedButton
-                                      .styleFrom(
-                                minimumSize:
-                                    const Size
-                                        .fromHeight(
-                                  52,
-                                ),
+                            child: OutlinedButton(
+                              onPressed: _isLoading
+                                  ? null
+                                  : () {
+                                      Navigator.pop(context);
+                                    },
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size.fromHeight(52),
                               ),
-                              child:
-                                  const Text(
-                                'Cancel',
-                              ),
+                              child: const Text('Cancel'),
                             ),
                           ),
 
-                          const SizedBox(
-                            width: 16,
-                          ),
+                          const SizedBox(width: 16),
 
                           Expanded(
-                            child:
-                                FilledButton
-                                    .icon(
-                              onPressed:
-                                  _isLoading
-                                      ? null
-                                      : _updateStudent,
+                            child: FilledButton.icon(
+                              onPressed: _isLoading ? null : _updateStudent,
                               icon: _isLoading
                                   ? const SizedBox(
                                       width: 20,
                                       height: 20,
-                                      child:
-                                          CircularProgressIndicator(
-                                        strokeWidth:
-                                            2,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
                                       ),
                                     )
-                                  : const Icon(
-                                      Icons
-                                          .save,
-                                    ),
+                                  : const Icon(Icons.save),
                               label: Text(
-                                _isLoading
-                                    ? 'Saving...'
-                                    : 'Save Changes',
+                                _isLoading ? 'Saving...' : 'Save Changes',
                               ),
-                              style:
-                                  FilledButton
-                                      .styleFrom(
-                                minimumSize:
-                                    const Size
-                                        .fromHeight(
-                                  52,
-                                ),
+                              style: FilledButton.styleFrom(
+                                minimumSize: const Size.fromHeight(52),
                               ),
                             ),
                           ),

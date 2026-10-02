@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+
 import '../services/api_service.dart';
 
 class LecturerProfilePage extends StatefulWidget {
   final String token;
 
-  const LecturerProfilePage({
-    super.key,
-    required this.token,
-  });
+  const LecturerProfilePage({super.key, required this.token});
 
   @override
   State<LecturerProfilePage> createState() => _LecturerProfilePageState();
@@ -25,16 +23,12 @@ class _LecturerProfilePageState extends State<LecturerProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Profile'),
-      ),
+      appBar: AppBar(title: const Text('My Profile')),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _profileFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -50,9 +44,7 @@ class _LecturerProfilePageState extends State<LecturerProfilePage> {
           }
 
           if (!snapshot.hasData) {
-            return const Center(
-              child: Text('No profile information found.'),
-            );
+            return const Center(child: Text('No profile information found.'));
           }
 
           final profile = snapshot.data!;
@@ -63,10 +55,7 @@ class _LecturerProfilePageState extends State<LecturerProfilePage> {
               children: [
                 const CircleAvatar(
                   radius: 50,
-                  child: Icon(
-                    Icons.person,
-                    size: 55,
-                  ),
+                  child: Icon(Icons.person, size: 55),
                 ),
 
                 const SizedBox(height: 20),
@@ -86,7 +75,7 @@ class _LecturerProfilePageState extends State<LecturerProfilePage> {
                   profile['lecturer_number'] ?? 'N/A',
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
 
@@ -144,15 +133,8 @@ class _LecturerProfilePageState extends State<LecturerProfilePage> {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: Icon(icon),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: Text(
-          value?.toString() ?? 'N/A',
-        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(value?.toString() ?? 'N/A'),
       ),
     );
   }

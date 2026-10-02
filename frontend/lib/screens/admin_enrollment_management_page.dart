@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+
 import '../services/api_service.dart';
 
 class AdminEnrollmentManagementPage extends StatefulWidget {
   final Map<String, dynamic> user;
 
-  const AdminEnrollmentManagementPage({
-    super.key,
-    required this.user,
-  });
+  const AdminEnrollmentManagementPage({super.key, required this.user});
 
   @override
   State<AdminEnrollmentManagementPage> createState() =>
@@ -73,16 +71,21 @@ class _AdminEnrollmentManagementPageState
     final query = _searchQuery.toLowerCase().trim();
 
     return _enrollments.where((enrollment) {
-      final studentName =
-          (enrollment['student_name'] ?? '').toString().toLowerCase();
-      final studentNumber =
-          (enrollment['student_number'] ?? '').toString().toLowerCase();
-      final studentEmail =
-          (enrollment['student_email'] ?? '').toString().toLowerCase();
-      final subjectCode =
-          (enrollment['subject_code'] ?? '').toString().toLowerCase();
-      final subjectName =
-          (enrollment['subject_name'] ?? '').toString().toLowerCase();
+      final studentName = (enrollment['student_name'] ?? '')
+          .toString()
+          .toLowerCase();
+      final studentNumber = (enrollment['student_number'] ?? '')
+          .toString()
+          .toLowerCase();
+      final studentEmail = (enrollment['student_email'] ?? '')
+          .toString()
+          .toLowerCase();
+      final subjectCode = (enrollment['subject_code'] ?? '')
+          .toString()
+          .toLowerCase();
+      final subjectName = (enrollment['subject_name'] ?? '')
+          .toString()
+          .toLowerCase();
 
       return studentName.contains(query) ||
           studentNumber.contains(query) ||
@@ -108,9 +111,7 @@ class _AdminEnrollmentManagementPageState
     int? selectedSubjectId;
     String selectedSemester = 'Semester 1';
 
-    final academicYearController = TextEditingController(
-      text: '2026/2027',
-    );
+    final academicYearController = TextEditingController(text: '2026/2027');
 
     final formKey = GlobalKey<FormState>();
 
@@ -139,8 +140,8 @@ class _AdminEnrollmentManagementPageState
                             final id = student['id'] as int;
                             final studentNumber =
                                 (student['student_number'] ?? '').toString();
-                            final name =
-                                (student['full_name'] ?? '').toString();
+                            final name = (student['full_name'] ?? '')
+                                .toString();
 
                             return DropdownMenuItem<int>(
                               value: id,
@@ -171,10 +172,10 @@ class _AdminEnrollmentManagementPageState
                           ),
                           items: _subjects.map((subject) {
                             final id = subject['id'] as int;
-                            final code =
-                                (subject['subject_code'] ?? '').toString();
-                            final name =
-                                (subject['subject_name'] ?? '').toString();
+                            final code = (subject['subject_code'] ?? '')
+                                .toString();
+                            final name = (subject['subject_name'] ?? '')
+                                .toString();
 
                             return DropdownMenuItem<int>(
                               value: id,
@@ -263,16 +264,12 @@ class _AdminEnrollmentManagementPageState
                     try {
                       final token = widget.user['access_token'] as String;
 
-                      await ApiService.createEnrollment(
-                        token,
-                        {
-                          'student_id': selectedStudentId,
-                          'subject_id': selectedSubjectId,
-                          'semester': selectedSemester,
-                          'academic_year':
-                              academicYearController.text.trim(),
-                        },
-                      );
+                      await ApiService.createEnrollment(token, {
+                        'student_id': selectedStudentId,
+                        'subject_id': selectedSubjectId,
+                        'semester': selectedSemester,
+                        'academic_year': academicYearController.text.trim(),
+                      });
 
                       if (!dialogContext.mounted) return;
 
@@ -305,9 +302,7 @@ class _AdminEnrollmentManagementPageState
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Student enrolled successfully.'),
-        ),
+        const SnackBar(content: Text('Student enrolled successfully.')),
       );
     }
   }
@@ -315,11 +310,9 @@ class _AdminEnrollmentManagementPageState
   Future<void> _removeEnrollment(Map<String, dynamic> enrollment) async {
     final enrollmentId = enrollment['enrollment_id'] as int;
 
-    final studentName =
-        (enrollment['student_name'] ?? 'Student').toString();
+    final studentName = (enrollment['student_name'] ?? 'Student').toString();
 
-    final subjectCode =
-        (enrollment['subject_code'] ?? 'Subject').toString();
+    final subjectCode = (enrollment['subject_code'] ?? 'Subject').toString();
 
     final confirmed = await showDialog<bool>(
       context: context,
@@ -338,9 +331,7 @@ class _AdminEnrollmentManagementPageState
               child: const Text('Cancel'),
             ),
             FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.red,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
               onPressed: () {
                 Navigator.pop(dialogContext, true);
               },
@@ -356,10 +347,7 @@ class _AdminEnrollmentManagementPageState
     try {
       final token = widget.user['access_token'] as String;
 
-      await ApiService.deleteEnrollment(
-        token,
-        enrollmentId,
-      );
+      await ApiService.deleteEnrollment(token, enrollmentId);
 
       if (!mounted) return;
 
@@ -368,19 +356,13 @@ class _AdminEnrollmentManagementPageState
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enrollment removed successfully.'),
-        ),
+        const SnackBar(content: Text('Enrollment removed successfully.')),
       );
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-          ),
-        ),
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
       );
     }
   }
@@ -398,9 +380,7 @@ class _AdminEnrollmentManagementPageState
           children: [
             CircleAvatar(
               child: Icon(
-                isDropped
-                    ? Icons.person_off_outlined
-                    : Icons.person_outline,
+                isDropped ? Icons.person_off_outlined : Icons.person_outline,
               ),
             ),
             const SizedBox(width: 16),
@@ -421,16 +401,14 @@ class _AdminEnrollmentManagementPageState
                     '${enrollment['student_number'] ?? ''} • '
                     '${enrollment['student_email'] ?? ''}',
                     style: TextStyle(
-                      color: Colors.grey.shade700,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 10),
                   Text(
                     '${enrollment['subject_code'] ?? ''} - '
                     '${enrollment['subject_name'] ?? ''}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 6),
                   Wrap(
@@ -438,13 +416,8 @@ class _AdminEnrollmentManagementPageState
                     runSpacing: 6,
                     children: [
                       Chip(
-                        avatar: const Icon(
-                          Icons.school_outlined,
-                          size: 18,
-                        ),
-                        label: Text(
-                          (enrollment['semester'] ?? '').toString(),
-                        ),
+                        avatar: const Icon(Icons.school_outlined, size: 18),
+                        label: Text((enrollment['semester'] ?? '').toString()),
                       ),
                       Chip(
                         avatar: const Icon(
@@ -456,9 +429,7 @@ class _AdminEnrollmentManagementPageState
                         ),
                       ),
                       Chip(
-                        label: Text(
-                          status.isEmpty ? 'Unknown' : status,
-                        ),
+                        label: Text(status.isEmpty ? 'Unknown' : status),
                         backgroundColor: isDropped
                             ? Colors.red.shade100
                             : Colors.green.shade100,
@@ -471,10 +442,7 @@ class _AdminEnrollmentManagementPageState
             if (!isDropped)
               IconButton(
                 tooltip: 'Remove enrollment',
-                icon: const Icon(
-                  Icons.delete_outline,
-                  color: Colors.red,
-                ),
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
                 onPressed: () => _removeEnrollment(enrollment),
               ),
           ],
@@ -485,9 +453,7 @@ class _AdminEnrollmentManagementPageState
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_errorMessage != null) {
@@ -497,23 +463,14 @@ class _AdminEnrollmentManagementPageState
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.error_outline,
-                size: 56,
-              ),
+              const Icon(Icons.error_outline, size: 56),
               const SizedBox(height: 16),
               const Text(
                 'Unable to load enrollments',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-              ),
+              Text(_errorMessage!, textAlign: TextAlign.center),
               const SizedBox(height: 20),
               FilledButton.icon(
                 onPressed: _loadData,
@@ -540,7 +497,7 @@ class _AdminEnrollmentManagementPageState
                   '${_enrollments.length} enrollment'
                   '${_enrollments.length == 1 ? '' : 's'}',
                   style: TextStyle(
-                    color: Colors.grey.shade700,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 15,
                   ),
                 ),
@@ -583,27 +540,21 @@ class _AdminEnrollmentManagementPageState
               padding: const EdgeInsets.symmetric(vertical: 60),
               child: Column(
                 children: [
-                  const Icon(
-                    Icons.assignment_outlined,
-                    size: 64,
-                  ),
+                  const Icon(Icons.assignment_outlined, size: 64),
                   const SizedBox(height: 16),
                   Text(
                     _searchQuery.isEmpty
                         ? 'No enrollments found.'
                         : 'No matching enrollments found.',
-                    style: const TextStyle(
-                      fontSize: 17,
-                    ),
+                    style: const TextStyle(fontSize: 17),
                   ),
                 ],
               ),
             )
           else
             ...filtered.map(
-              (enrollment) => _buildEnrollmentCard(
-                enrollment as Map<String, dynamic>,
-              ),
+              (enrollment) =>
+                  _buildEnrollmentCard(enrollment as Map<String, dynamic>),
             ),
         ],
       ),

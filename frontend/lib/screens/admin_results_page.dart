@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
+
 import '../services/api_service.dart';
 
 class AdminResultsPage extends StatefulWidget {
   final String token;
 
-  const AdminResultsPage({
-    super.key,
-    required this.token,
-  });
+  const AdminResultsPage({super.key, required this.token});
 
   @override
   State<AdminResultsPage> createState() => _AdminResultsPageState();
@@ -45,13 +43,8 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
         isLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to load results: $e',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to load results: $e')));
     }
   }
 
@@ -192,9 +185,7 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
                         marks.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text(
-                            'Please complete all fields.',
-                          ),
+                          content: Text('Please complete all fields.'),
                         ),
                       );
                       return;
@@ -207,9 +198,7 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
                         parsedMarks > 100) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text(
-                            'Marks must be between 0 and 100.',
-                          ),
+                          content: Text('Marks must be between 0 and 100.'),
                         ),
                       );
                       return;
@@ -238,54 +227,34 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
     }
 
     try {
-      await ApiService.createAdminResult(
-        widget.token,
-        {
-          'student_id': selectedStudentId,
-          'subject_id': selectedSubjectId,
-          'semester': selectedSemester,
-          'academic_year': academicYear,
-          'marks': parsedMarks,
-        },
-      );
+      await ApiService.createAdminResult(widget.token, {
+        'student_id': selectedStudentId,
+        'subject_id': selectedSubjectId,
+        'semester': selectedSemester,
+        'academic_year': academicYear,
+        'marks': parsedMarks,
+      });
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Result created successfully.',
-          ),
-        ),
+        const SnackBar(content: Text('Result created successfully.')),
       );
 
       await _loadResults();
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to create result: $e',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to create result: $e')));
     }
   }
 
-  Future<void> _publishResult(
-    int resultId,
-    String currentStatus,
-  ) async {
-    final newStatus =
-        currentStatus == 'published' ? 'draft' : 'published';
+  Future<void> _publishResult(int resultId, String currentStatus) async {
+    final newStatus = currentStatus == 'published' ? 'draft' : 'published';
 
     try {
-      await ApiService.publishResult(
-        widget.token,
-        resultId,
-        newStatus,
-      );
+      await ApiService.publishResult(widget.token, resultId, newStatus);
 
       if (!mounted) return;
 
@@ -303,13 +272,8 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to update result: $e',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to update result: $e')));
     }
   }
 
@@ -349,32 +313,20 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
     if (confirmed != true) return;
 
     try {
-      await ApiService.deleteAdminResult(
-        widget.token,
-        resultId,
-      );
+      await ApiService.deleteAdminResult(widget.token, resultId);
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Result deleted successfully.',
-          ),
-        ),
+        const SnackBar(content: Text('Result deleted successfully.')),
       );
 
       await _loadResults();
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to delete result: $e',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to delete result: $e')));
     }
   }
 
@@ -404,8 +356,7 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
                         hintText: '0 - 100',
                         border: OutlineInputBorder(),
                       ),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(
+                      keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
                       onChanged: (value) {
@@ -420,10 +371,7 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
                       ),
                       initialValue: selectedStatus,
                       items: const [
-                        DropdownMenuItem(
-                          value: 'draft',
-                          child: Text('Draft'),
-                        ),
+                        DropdownMenuItem(value: 'draft', child: Text('Draft')),
                         DropdownMenuItem(
                           value: 'published',
                           child: Text('Published'),
@@ -449,17 +397,14 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
                 ),
                 ElevatedButton.icon(
                   onPressed: () {
-                    final parsedMarks =
-                        double.tryParse(marks);
+                    final parsedMarks = double.tryParse(marks);
 
                     if (parsedMarks == null ||
                         parsedMarks < 0 ||
                         parsedMarks > 100) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text(
-                            'Marks must be between 0 and 100.',
-                          ),
+                          content: Text('Marks must be between 0 and 100.'),
                         ),
                       );
                       return;
@@ -481,43 +426,28 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
 
     final parsedMarks = double.tryParse(marks);
 
-    if (parsedMarks == null ||
-        parsedMarks < 0 ||
-        parsedMarks > 100) {
+    if (parsedMarks == null || parsedMarks < 0 || parsedMarks > 100) {
       return;
     }
 
     try {
-      await ApiService.updateAdminResult(
-        widget.token,
-        resultId,
-        {
-          'marks': parsedMarks,
-          'status': selectedStatus,
-        },
-      );
+      await ApiService.updateAdminResult(widget.token, resultId, {
+        'marks': parsedMarks,
+        'status': selectedStatus,
+      });
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Result updated successfully.',
-          ),
-        ),
+        const SnackBar(content: Text('Result updated successfully.')),
       );
 
       await _loadResults();
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to update result: $e',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Failed to update result: $e')));
     }
   }
 
@@ -563,9 +493,7 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
               searchQuery.isEmpty
                   ? 'No results found.'
                   : 'No matching results found.',
-              style: const TextStyle(
-                fontSize: 18,
-              ),
+              style: const TextStyle(fontSize: 18),
             ),
           ),
         ],
@@ -580,89 +508,66 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
         itemBuilder: (context, index) {
           final result = filteredResults[index];
 
-          final int resultId =
-              result['id'] as int;
+          final int resultId = result['id'] as int;
 
           final String studentName =
-              result['student_name']?.toString() ??
-                  'Unknown Student';
+              result['student_name']?.toString() ?? 'Unknown Student';
 
           final String studentNumber =
-              result['student_number']?.toString() ??
-                  '-';
+              result['student_number']?.toString() ?? '-';
 
-          final String subjectCode =
-              result['subject_code']?.toString() ??
-                  '-';
+          final String subjectCode = result['subject_code']?.toString() ?? '-';
 
-          final String subjectName =
-              result['subject_name']?.toString() ??
-                  '-';
+          final String subjectName = result['subject_name']?.toString() ?? '-';
 
-          final String marks =
-              result['marks']?.toString() ?? '-';
+          final String marks = result['marks']?.toString() ?? '-';
 
-          final String grade =
-              result['grade']?.toString() ?? '-';
+          final String grade = result['grade']?.toString() ?? '-';
 
-          final String gradePoint =
-              result['grade_point']?.toString() ?? '-';
+          final String gradePoint = result['grade_point']?.toString() ?? '-';
 
-          final String semester =
-              result['semester']?.toString() ?? '-';
+          final String semester = result['semester']?.toString() ?? '-';
 
           final String academicYear =
               result['academic_year']?.toString() ?? '-';
 
-          final String status =
-              result['status']?.toString() ?? 'draft';
+          final String status = result['status']?.toString() ?? 'draft';
 
-          final bool isPublished =
-              status == 'published';
+          final bool isPublished = status == 'published';
 
           return Card(
-            margin: const EdgeInsets.only(
-              bottom: 12,
-            ),
+            margin: const EdgeInsets.only(bottom: 12),
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: Text(
                           '$subjectCode - $subjectName',
                           style: const TextStyle(
                             fontSize: 18,
-                            fontWeight:
-                                FontWeight.bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                       Container(
-                        padding:
-                            const EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 10,
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: _statusColor(status)
-                              .withValues(alpha: 0.12),
-                          borderRadius:
-                              BorderRadius.circular(20),
+                          color: _statusColor(status).withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
                           status.toUpperCase(),
                           style: TextStyle(
-                            color:
-                                _statusColor(status),
-                            fontWeight:
-                                FontWeight.bold,
+                            color: _statusColor(status),
+                            fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
                         ),
@@ -672,82 +577,45 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
                   const SizedBox(height: 12),
                   Text(
                     'Student: $studentName',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
-                  Text(
-                    'Student Number: $studentNumber',
-                  ),
+                  Text('Student Number: $studentNumber'),
                   const SizedBox(height: 8),
-                  Text(
-                    'Marks: $marks',
-                  ),
-                  Text(
-                    'Grade: $grade',
-                  ),
-                  Text(
-                    'Grade Point: $gradePoint',
-                  ),
-                  Text(
-                    'Semester: $semester',
-                  ),
-                  Text(
-                    'Academic Year: $academicYear',
-                  ),
+                  Text('Marks: $marks'),
+                  Text('Grade: $grade'),
+                  Text('Grade Point: $gradePoint'),
+                  Text('Semester: $semester'),
+                  Text('Academic Year: $academicYear'),
                   const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
                           onPressed: () {
-                            _editResult(
-                              resultId,
-                              marks,
-                              status,
-                            );
+                            _editResult(resultId, marks, status);
                           },
-                          icon: const Icon(
-                            Icons.edit,
-                          ),
-                          label: const Text(
-                            'Edit',
-                          ),
+                          icon: const Icon(Icons.edit),
+                          label: const Text('Edit'),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            _publishResult(
-                              resultId,
-                              status,
-                            );
+                            _publishResult(resultId, status);
                           },
                           icon: Icon(
-                            isPublished
-                                ? Icons.unpublished
-                                : Icons.publish,
+                            isPublished ? Icons.unpublished : Icons.publish,
                           ),
-                          label: Text(
-                            isPublished
-                                ? 'Draft'
-                                : 'Publish',
-                          ),
+                          label: Text(isPublished ? 'Draft' : 'Publish'),
                         ),
                       ),
                       const SizedBox(width: 8),
                       IconButton(
                         onPressed: () {
-                          _deleteResult(
-                            resultId,
-                            studentName,
-                            subjectCode,
-                          );
+                          _deleteResult(resultId, studentName, subjectCode);
                         },
-                        icon: const Icon(
-                          Icons.delete_outline,
-                        ),
+                        icon: const Icon(Icons.delete_outline),
                         tooltip: 'Delete Result',
                       ),
                     ],
@@ -780,23 +648,15 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
         ],
       ),
       body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    16,
-                    16,
-                    16,
-                    8,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: TextField(
                     decoration: InputDecoration(
                       labelText: 'Search Results',
-                      hintText:
-                          'Student, student number, or subject',
+                      hintText: 'Student, student number, or subject',
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: searchQuery.isNotEmpty
                           ? IconButton(
@@ -818,11 +678,9 @@ class _AdminResultsPageState extends State<AdminResultsPage> {
                     },
                   ),
                 ),
-                Expanded(
-                  child: _buildResultsList(),
-                ),
+                Expanded(child: _buildResultsList()),
               ],
-            )
+            ),
     );
   }
 }

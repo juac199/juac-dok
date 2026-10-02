@@ -12,22 +12,22 @@ class StudentCreate(BaseModel):
     email: str
     password: str
     student_number: str
-    date_of_birth: date
-    phone: str
-    address: str
-    program: str
-    enrollment_date: date
+    date_of_birth: date | None = None
+    phone: str = ""
+    address: str | None = None
+    program: str = ""
+    enrollment_date: date | None = None
 
 
 class StudentUpdate(BaseModel):
     full_name: str
     email: str
     student_number: str
-    date_of_birth: date
-    phone: str
-    address: str
-    program: str
-    enrollment_date: date
+    date_of_birth: date | None = None
+    phone: str = ""
+    address: str | None = None
+    program: str = ""
+    enrollment_date: date | None = None
 
 
 # ============================================================

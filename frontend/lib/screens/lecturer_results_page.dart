@@ -4,10 +4,7 @@ import 'package:frontend/services/api_service.dart';
 class LecturerResultsPage extends StatefulWidget {
   final String token;
 
-  const LecturerResultsPage({
-    super.key,
-    required this.token,
-  });
+  const LecturerResultsPage({super.key, required this.token});
 
   @override
   State<LecturerResultsPage> createState() => _LecturerResultsPageState();
@@ -31,9 +28,7 @@ class _LecturerResultsPageState extends State<LecturerResultsPage> {
     });
 
     try {
-      final results = await ApiService.getLecturerResults(
-        widget.token,
-      );
+      final results = await ApiService.getLecturerResults(widget.token);
 
       if (!mounted) return;
 
@@ -55,10 +50,8 @@ class _LecturerResultsPageState extends State<LecturerResultsPage> {
     final studentIdController = TextEditingController();
     final subjectIdController = TextEditingController();
     final marksController = TextEditingController();
-    final semesterController =
-        TextEditingController(text: 'Semester 1');
-    final academicYearController =
-        TextEditingController(text: '2026/2027');
+    final semesterController = TextEditingController(text: 'Semester 1');
+    final academicYearController = TextEditingController(text: '2026/2027');
 
     final formKey = GlobalKey<FormState>();
 
@@ -127,9 +120,7 @@ class _LecturerResultsPageState extends State<LecturerResultsPage> {
                           border: OutlineInputBorder(),
                         ),
                         validator: (value) {
-                          final marks = double.tryParse(
-                            value?.trim() ?? '',
-                          );
+                          final marks = double.tryParse(value?.trim() ?? '');
 
                           if (marks == null) {
                             return 'Enter valid marks';
@@ -164,9 +155,7 @@ class _LecturerResultsPageState extends State<LecturerResultsPage> {
               ),
               actions: [
                 TextButton(
-                  onPressed: saving
-                      ? null
-                      : () => Navigator.pop(context),
+                  onPressed: saving ? null : () => Navigator.pop(context),
                   child: const Text('Cancel'),
                 ),
                 ElevatedButton(
@@ -182,24 +171,20 @@ class _LecturerResultsPageState extends State<LecturerResultsPage> {
                           });
 
                           try {
-                            await ApiService.addLecturerResult(
-                              widget.token,
-                              {
-                                'student_id': int.parse(
-                                  studentIdController.text.trim(),
-                                ),
-                                'subject_id': int.parse(
-                                  subjectIdController.text.trim(),
-                                ),
-                                'marks': double.parse(
-                                  marksController.text.trim(),
-                                ),
-                                'semester':
-                                    semesterController.text.trim(),
-                                'academic_year':
-                                    academicYearController.text.trim(),
-                              },
-                            );
+                            await ApiService.addLecturerResult(widget.token, {
+                              'student_id': int.parse(
+                                studentIdController.text.trim(),
+                              ),
+                              'subject_id': int.parse(
+                                subjectIdController.text.trim(),
+                              ),
+                              'marks': double.parse(
+                                marksController.text.trim(),
+                              ),
+                              'semester': semesterController.text.trim(),
+                              'academic_year': academicYearController.text
+                                  .trim(),
+                            });
 
                             if (!context.mounted) return;
 
@@ -207,9 +192,7 @@ class _LecturerResultsPageState extends State<LecturerResultsPage> {
 
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text(
-                                  'Result added successfully.',
-                                ),
+                                content: Text('Result added successfully.'),
                               ),
                             );
 
@@ -223,9 +206,7 @@ class _LecturerResultsPageState extends State<LecturerResultsPage> {
 
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(
-                                  'Failed to add result.\n$e',
-                                ),
+                                content: Text('Failed to add result.\n$e'),
                               ),
                             );
                           }
@@ -234,9 +215,7 @@ class _LecturerResultsPageState extends State<LecturerResultsPage> {
                       ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Text('Save'),
                 ),
@@ -273,107 +252,82 @@ class _LecturerResultsPageState extends State<LecturerResultsPage> {
         label: const Text('Add Result'),
       ),
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
+          ? const Center(child: CircularProgressIndicator())
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 48,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          _error!,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadResults,
-                          child: const Text('Try Again'),
-                        ),
-                      ],
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48),
+                    const SizedBox(height: 12),
+                    Text(_error!, textAlign: TextAlign.center),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _loadResults,
+                      child: const Text('Try Again'),
                     ),
-                  ),
-                )
-              : _results.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No results found.',
-                        style: TextStyle(fontSize: 16),
+                  ],
+                ),
+              ),
+            )
+          : _results.isEmpty
+          ? const Center(
+              child: Text('No results found.', style: TextStyle(fontSize: 16)),
+            )
+          : RefreshIndicator(
+              onRefresh: _loadResults,
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: _results.length,
+                itemBuilder: (context, index) {
+                  final result = _results[index];
+
+                  final studentName =
+                      result['student_name'] ??
+                      result['full_name'] ??
+                      'Unknown Student';
+
+                  final studentNumber = result['student_number'] ?? '';
+
+                  final subjectName =
+                      result['subject_name'] ??
+                      result['course_name'] ??
+                      'Unknown Subject';
+
+                  final subjectCode = result['subject_code'] ?? '';
+
+                  final marks = result['marks']?.toString() ?? '-';
+
+                  final grade = result['grade']?.toString() ?? '-';
+
+                  final gp =
+                      result['grade_point']?.toString() ??
+                      result['gp']?.toString() ??
+                      '-';
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        child: Text(grade.isNotEmpty ? grade[0] : '?'),
                       ),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: _loadResults,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: _results.length,
-                        itemBuilder: (context, index) {
-                          final result = _results[index];
-
-                          final studentName =
-                              result['student_name'] ??
-                              result['full_name'] ??
-                              'Unknown Student';
-
-                          final studentNumber =
-                              result['student_number'] ??
-                              '';
-
-                          final subjectName =
-                              result['subject_name'] ??
-                              result['course_name'] ??
-                              'Unknown Subject';
-
-                          final subjectCode =
-                              result['subject_code'] ??
-                              '';
-
-                          final marks =
-                              result['marks']?.toString() ?? '-';
-
-                          final grade =
-                              result['grade']?.toString() ?? '-';
-
-                          final gp =
-                              result['grade_point']?.toString() ??
-                              result['gp']?.toString() ??
-                              '-';
-
-                          return Card(
-                            margin: const EdgeInsets.only(
-                              bottom: 12,
-                            ),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                child: Text(
-                                  grade.isNotEmpty
-                                      ? grade[0]
-                                      : '?',
-                                ),
-                              ),
-                              title: Text(
-                                studentName,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Text(
-                                '$studentNumber\n'
-                                '$subjectCode - $subjectName\n'
-                                'Marks: $marks  |  Grade: $grade  |  GP: $gp',
-                              ),
-                              isThreeLine: true,
-                            ),
-                          );
-                        },
+                      title: Text(
+                        studentName,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
+                      subtitle: Text(
+                        '$studentNumber\n'
+                        '$subjectCode - $subjectName\n'
+                        'Marks: $marks  |  Grade: $grade  |  GP: $gp',
+                      ),
+                      isThreeLine: true,
                     ),
+                  );
+                },
+              ),
+            ),
     );
   }
 }

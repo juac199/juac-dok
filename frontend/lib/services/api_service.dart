@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'http://127.0.0.1:8000';
+  static const String baseUrl =
+      'http://'
+      '10.84.138.176:8000';
 
   // ============================================================
   // LOGIN
@@ -13,16 +15,18 @@ class ApiService {
     String email,
     String password,
   ) async {
+    print('LOGIN DEBUG URL: $baseUrl/login');
+    print('LOGIN DEBUG EMAIL: ${email.trim()}');
+    print('LOGIN DEBUG EMAIL LENGTH: ${email.trim().length}');
+
     final response = await http.post(
       Uri.parse('$baseUrl/login'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email.trim(), 'password': password}),
     );
+
+    print('LOGIN DEBUG STATUS: ${response.statusCode}');
+    print('LOGIN DEBUG RESPONSE: ${response.body}');
 
     final data = jsonDecode(response.body);
 
@@ -30,18 +34,14 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Login failed',
-    );
+    throw Exception(data['detail'] ?? 'Login failed');
   }
 
   // ============================================================
   // STUDENTS
   // ============================================================
 
-  static Future<List<dynamic>> getStudents(
-    String token,
-  ) async {
+  static Future<List<dynamic>> getStudents(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/students'),
       headers: {
@@ -56,9 +56,7 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to load students',
-    );
+    throw Exception(data['detail'] ?? 'Failed to load students');
   }
 
   static Future<Map<String, dynamic>> getStudent(
@@ -79,14 +77,10 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to load student',
-    );
+    throw Exception(data['detail'] ?? 'Failed to load student');
   }
 
-  static Future<Map<String, dynamic>> getMyStudentProfile(
-    String token,
-  ) async {
+  static Future<Map<String, dynamic>> getMyStudentProfile(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/students/me'),
       headers: {
@@ -101,9 +95,7 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to load student profile',
-    );
+    throw Exception(data['detail'] ?? 'Failed to load student profile');
   }
 
   static Future<Map<String, dynamic>> createStudent(
@@ -125,9 +117,7 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to create student',
-    );
+    throw Exception(data['detail'] ?? 'Failed to create student');
   }
 
   static Future<Map<String, dynamic>> updateStudent(
@@ -150,9 +140,7 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to update student',
-    );
+    throw Exception(data['detail'] ?? 'Failed to update student');
   }
 
   static Future<Map<String, dynamic>> deleteStudent(
@@ -173,18 +161,14 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to delete student',
-    );
+    throw Exception(data['detail'] ?? 'Failed to delete student');
   }
 
   // ============================================================
   // SUBJECTS
   // ============================================================
 
-  static Future<List<dynamic>> getSubjects(
-    String token,
-  ) async {
+  static Future<List<dynamic>> getSubjects(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/subjects'),
       headers: {
@@ -199,9 +183,7 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to load subjects',
-    );
+    throw Exception(data['detail'] ?? 'Failed to load subjects');
   }
 
   static Future<Map<String, dynamic>> createSubject(
@@ -223,9 +205,7 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to create subject',
-    );
+    throw Exception(data['detail'] ?? 'Failed to create subject');
   }
 
   static Future<Map<String, dynamic>> updateSubject(
@@ -248,9 +228,7 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to update subject',
-    );
+    throw Exception(data['detail'] ?? 'Failed to update subject');
   }
 
   static Future<Map<String, dynamic>> deleteSubject(
@@ -271,18 +249,14 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to delete subject',
-    );
+    throw Exception(data['detail'] ?? 'Failed to delete subject');
   }
 
   // ============================================================
   // AVAILABLE SUBJECTS
   // ============================================================
 
-  static Future<List<dynamic>> getAvailableSubjects(
-    String token,
-  ) async {
+  static Future<List<dynamic>> getAvailableSubjects(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/students/available-subjects'),
       headers: {
@@ -297,18 +271,14 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to load available subjects',
-    );
+    throw Exception(data['detail'] ?? 'Failed to load available subjects');
   }
 
   // ============================================================
   // MY REGISTERED SUBJECTS
   // ============================================================
 
-  static Future<List<dynamic>> getMySubjects(
-    String token,
-  ) async {
+  static Future<List<dynamic>> getMySubjects(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/students/me/subjects'),
       headers: {
@@ -323,9 +293,7 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to load registered subjects',
-    );
+    throw Exception(data['detail'] ?? 'Failed to load registered subjects');
   }
 
   static Future<Map<String, dynamic>> registerSubject(
@@ -353,9 +321,7 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to register subject',
-    );
+    throw Exception(data['detail'] ?? 'Failed to register subject');
   }
 
   static Future<Map<String, dynamic>> dropSubject(
@@ -363,9 +329,7 @@ class ApiService {
     int registrationId,
   ) async {
     final response = await http.delete(
-      Uri.parse(
-        '$baseUrl/students/me/subjects/$registrationId',
-      ),
+      Uri.parse('$baseUrl/students/me/subjects/$registrationId'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -378,18 +342,14 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to drop subject',
-    );
+    throw Exception(data['detail'] ?? 'Failed to drop subject');
   }
 
   // ============================================================
   // RESULTS
   // ============================================================
 
-  static Future<List<dynamic>> getMyResults(
-    String token,
-  ) async {
+  static Future<List<dynamic>> getMyResults(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/students/me/results'),
       headers: {
@@ -406,18 +366,14 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to load results',
-    );
+    throw Exception(data['detail'] ?? 'Failed to load results');
   }
 
   // ============================================================
   // GPA
   // ============================================================
 
-  static Future<List<dynamic>> getMyGpa(
-    String token,
-  ) async {
+  static Future<List<dynamic>> getMyGpa(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/students/me/gpa'),
       headers: {
@@ -432,18 +388,14 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to load GPA',
-    );
+    throw Exception(data['detail'] ?? 'Failed to load GPA');
   }
 
   // ============================================================
   // CGPA
   // ============================================================
 
-  static Future<Map<String, dynamic>> getMyCgpa(
-    String token,
-  ) async {
+  static Future<Map<String, dynamic>> getMyCgpa(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/students/me/cgpa'),
       headers: {
@@ -458,18 +410,14 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to load CGPA',
-    );
+    throw Exception(data['detail'] ?? 'Failed to load CGPA');
   }
 
   // ============================================================
   // ACADEMIC PERFORMANCE
   // ============================================================
 
-  static Future<Map<String, dynamic>> getMyPerformance(
-    String token,
-  ) async {
+  static Future<Map<String, dynamic>> getMyPerformance(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/students/me/performance'),
       headers: {
@@ -484,18 +432,14 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to load academic performance',
-    );
+    throw Exception(data['detail'] ?? 'Failed to load academic performance');
   }
 
   // ============================================================
   // ATTENDANCE
   // ============================================================
 
-  static Future<List<dynamic>> getMyAttendance(
-    String token,
-  ) async {
+  static Future<List<dynamic>> getMyAttendance(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/students/me/attendance'),
       headers: {
@@ -510,9 +454,7 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to load attendance',
-    );
+    throw Exception(data['detail'] ?? 'Failed to load attendance');
   }
 
   // ============================================================
@@ -536,32 +478,24 @@ class ApiService {
       return data;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to load attendance summary',
-    );
+    throw Exception(data['detail'] ?? 'Failed to load attendance summary');
   }
 
   // ============================================================
   // ADMIN ENROLLMENT MANAGEMENT
   // ============================================================
 
-  static Future<List<dynamic>> getAdminEnrollments(
-    String token,
-  ) async {
+  static Future<List<dynamic>> getAdminEnrollments(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/enrollments'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as List<dynamic>;
     }
 
-    throw Exception(
-      'Failed to load enrollments: ${response.body}',
-    );
+    throw Exception('Failed to load enrollments: ${response.body}');
   }
 
   static Future<Map<String, dynamic>> createEnrollment(
@@ -583,9 +517,7 @@ class ApiService {
       return data as Map<String, dynamic>;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to create enrollment',
-    );
+    throw Exception(data['detail'] ?? 'Failed to create enrollment');
   }
 
   static Future<Map<String, dynamic>> deleteEnrollment(
@@ -594,9 +526,7 @@ class ApiService {
   ) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/enrollments/$enrollmentId'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     final data = jsonDecode(response.body);
@@ -605,9 +535,7 @@ class ApiService {
       return data as Map<String, dynamic>;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to remove enrollment',
-    );
+    throw Exception(data['detail'] ?? 'Failed to remove enrollment');
   }
 
   // ============================================================
@@ -621,18 +549,14 @@ class ApiService {
   static Future<List<dynamic>> getAdminLecturers(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/lecturers'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body) as List<dynamic>;
     }
 
-    throw Exception(
-      'Failed to load lecturers: ${response.body}',
-    );
+    throw Exception('Failed to load lecturers: ${response.body}');
   }
 
   static Future<Map<String, dynamic>> createLecturer(
@@ -654,9 +578,7 @@ class ApiService {
       return data as Map<String, dynamic>;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to create lecturer',
-    );
+    throw Exception(data['detail'] ?? 'Failed to create lecturer');
   }
 
   static Future<Map<String, dynamic>> updateLecturer(
@@ -679,9 +601,7 @@ class ApiService {
       return data as Map<String, dynamic>;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to update lecturer',
-    );
+    throw Exception(data['detail'] ?? 'Failed to update lecturer');
   }
 
   static Future<Map<String, dynamic>> deleteLecturer(
@@ -690,9 +610,7 @@ class ApiService {
   ) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/lecturers/$lecturerId'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     final data = jsonDecode(response.body);
@@ -701,14 +619,10 @@ class ApiService {
       return data as Map<String, dynamic>;
     }
 
-    throw Exception(
-      data['detail'] ?? 'Failed to delete lecturer',
-    );
+    throw Exception(data['detail'] ?? 'Failed to delete lecturer');
   }
 
-  static Future<Map<String, dynamic>> getMyLecturerProfile(
-    String token,
-  ) async {
+  static Future<Map<String, dynamic>> getMyLecturerProfile(String token) async {
     final response = await http.get(
       Uri.parse('$baseUrl/lecturers/me'),
       headers: {
@@ -721,54 +635,46 @@ class ApiService {
       return jsonDecode(response.body);
     }
 
-    throw Exception(
-      'Failed to load lecturer profile: ${response.body}',
-    );
+    throw Exception('Failed to load lecturer profile: ${response.body}');
   }
 
   // ============================================================
   // LECTURER SUBJECTS
   // ============================================================
 
-
-static Future<List<dynamic>> getMyLecturerSubjects(
-  String token,
-) async {
-  final response = await http.get(
-    Uri.parse('$baseUrl/lecturers/me/subjects'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-  );
-
-  print('LECTURER SUBJECTS API RESPONSE: ${response.body}');
-
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-
-    if (data is List) {
-      return data;
-    }
-
-    if (data is Map<String, dynamic>) {
-      final subjects = data['subjects'];
-
-      if (subjects is List) {
-        return subjects;
-      }
-    }
-
-    throw Exception(
-      'Unexpected lecturer subjects response: ${response.body}',
+  static Future<List<dynamic>> getMyLecturerSubjects(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/lecturers/me/subjects'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
     );
+
+    print('LECTURER SUBJECTS API RESPONSE: ${response.body}');
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      if (data is List) {
+        return data;
+      }
+
+      if (data is Map<String, dynamic>) {
+        final subjects = data['subjects'];
+
+        if (subjects is List) {
+          return subjects;
+        }
+      }
+
+      throw Exception(
+        'Unexpected lecturer subjects response: ${response.body}',
+      );
+    }
+
+    throw Exception('Failed to load lecturer subjects: ${response.body}');
   }
-
-  throw Exception(
-    'Failed to load lecturer subjects: ${response.body}',
-  );
-}
-
 
   // ============================================================
   // LECTURER SUBJECT STUDENTS
@@ -779,9 +685,7 @@ static Future<List<dynamic>> getMyLecturerSubjects(
     int subjectId,
   ) async {
     final response = await http.get(
-      Uri.parse(
-        '$baseUrl/lecturers/me/subjects/$subjectId/students',
-      ),
+      Uri.parse('$baseUrl/lecturers/me/subjects/$subjectId/students'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -806,20 +710,14 @@ static Future<List<dynamic>> getMyLecturerSubjects(
         }
       }
 
-      throw Exception(
-        'Unexpected students response format: ${response.body}',
-      );
+      throw Exception('Unexpected students response format: ${response.body}');
     }
 
     if (data is Map<String, dynamic>) {
-      throw Exception(
-        data['detail'] ?? 'Failed to load enrolled students',
-      );
+      throw Exception(data['detail'] ?? 'Failed to load enrolled students');
     }
 
-    throw Exception(
-      'Failed to load enrolled students: ${response.body}',
-    );
+    throw Exception('Failed to load enrolled students: ${response.body}');
   }
 
   // ============================================================
@@ -832,9 +730,7 @@ static Future<List<dynamic>> getMyLecturerSubjects(
     String date,
   ) async {
     final response = await http.get(
-      Uri.parse(
-        '$baseUrl/attendance?subject_id=$subjectId&date=$date',
-      ),
+      Uri.parse('$baseUrl/attendance?subject_id=$subjectId&date=$date'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -862,14 +758,10 @@ static Future<List<dynamic>> getMyLecturerSubjects(
     }
 
     if (data is Map<String, dynamic>) {
-      throw Exception(
-        data['detail'] ?? 'Failed to load attendance',
-      );
+      throw Exception(data['detail'] ?? 'Failed to load attendance');
     }
 
-    throw Exception(
-      'Failed to load attendance: ${response.body}',
-    );
+    throw Exception('Failed to load attendance: ${response.body}');
   }
 
   // ============================================================
@@ -896,232 +788,197 @@ static Future<List<dynamic>> getMyLecturerSubjects(
     }
 
     if (data is Map<String, dynamic>) {
+      throw Exception(data['detail'] ?? 'Failed to record attendance');
+    }
+
+    throw Exception('Failed to record attendance: ${response.body}');
+  }
+
+  static Future<List<dynamic>> getLecturerResults(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/lecturers/me/results'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      if (data is List) {
+        return data;
+      }
+
+      if (data is Map<String, dynamic>) {
+        final results = data['results'];
+
+        if (results is List) {
+          return results;
+        }
+      }
+
       throw Exception(
-        data['detail'] ?? 'Failed to record attendance',
+        'Unexpected lecturer results response format: ${response.body}',
       );
     }
 
-    throw Exception(
-      'Failed to record attendance: ${response.body}',
-    );
+    if (data is Map<String, dynamic>) {
+      throw Exception(data['detail'] ?? 'Failed to load lecturer results');
+    }
+
+    throw Exception('Failed to load lecturer results: ${response.body}');
   }
-static Future<List<dynamic>> getLecturerResults(
-  String token,
-) async {
-  final response = await http.get(
-    Uri.parse('$baseUrl/lecturers/me/results'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-  );
 
-  final data = jsonDecode(response.body);
+  static Future<dynamic> addLecturerResult(
+    String token,
+    Map<String, dynamic> resultData,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/lecturers/me/results'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(resultData),
+    );
 
-  if (response.statusCode == 200) {
-    if (data is List) {
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
       return data;
     }
 
     if (data is Map<String, dynamic>) {
-      final results = data['results'];
-
-      if (results is List) {
-        return results;
-      }
+      throw Exception(data['detail'] ?? 'Failed to add result');
     }
 
-    throw Exception(
-      'Unexpected lecturer results response format: ${response.body}',
+    throw Exception('Failed to add result: ${response.body}');
+  }
+
+  // ============================================================
+  // ADMIN GET ALL RESULTS
+  // ============================================================
+
+  static Future<List<dynamic>> getAdminResults(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/results'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
     );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      if (data is List) {
+        return data;
+      }
+
+      throw Exception(
+        'Unexpected admin results response format: ${response.body}',
+      );
+    }
+
+    if (data is Map<String, dynamic>) {
+      throw Exception(data['detail'] ?? 'Failed to load admin results');
+    }
+
+    throw Exception('Failed to load admin results: ${response.body}');
   }
 
-  if (data is Map<String, dynamic>) {
-    throw Exception(
-      data['detail'] ?? 'Failed to load lecturer results',
+  // ============================================================
+  // ADMIN PUBLISH RESULT
+  // ============================================================
+
+  static Future<Map<String, dynamic>> publishResult(
+    String token,
+    int resultId,
+    String status,
+  ) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/results/$resultId/publish'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'status': status}),
     );
-  }
 
-  throw Exception(
-    'Failed to load lecturer results: ${response.body}',
-  );
-}
+    final data = jsonDecode(response.body);
 
-static Future<dynamic> addLecturerResult(
-  String token,
-  Map<String, dynamic> resultData,
-) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/lecturers/me/results'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode(resultData),
-  );
-
-  final data = jsonDecode(response.body);
-
-  if (response.statusCode == 200 ||
-      response.statusCode == 201) {
-    return data;
-  }
-
-  if (data is Map<String, dynamic>) {
-    throw Exception(
-      data['detail'] ?? 'Failed to add result',
-    );
-  }
-
-  throw Exception(
-    'Failed to add result: ${response.body}',
-  );
-}
-
-// ============================================================
-// ADMIN GET ALL RESULTS
-// ============================================================
-
-static Future<List<dynamic>> getAdminResults(
-  String token,
-) async {
-  final response = await http.get(
-    Uri.parse('$baseUrl/results'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-  );
-
-  final data = jsonDecode(response.body);
-
-  if (response.statusCode == 200) {
-    if (data is List) {
+    if (response.statusCode == 200) {
       return data;
     }
 
-    throw Exception(
-      'Unexpected admin results response format: ${response.body}',
+    if (data is Map<String, dynamic>) {
+      throw Exception(data['detail'] ?? 'Failed to update result status');
+    }
+
+    throw Exception('Failed to update result status: ${response.body}');
+  }
+
+  // ============================================================
+  // ADMIN CREATE RESULT
+  // ============================================================
+
+  static Future<Map<String, dynamic>> createAdminResult(
+    String token,
+    Map<String, dynamic> resultData,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/results'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(resultData),
     );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 201) {
+      return data as Map<String, dynamic>;
+    }
+
+    if (data is Map<String, dynamic>) {
+      throw Exception(data['detail'] ?? 'Failed to create result');
+    }
+
+    throw Exception('Failed to create result: ${response.body}');
   }
 
-  if (data is Map<String, dynamic>) {
-    throw Exception(
-      data['detail'] ?? 'Failed to load admin results',
+  // ============================================================
+  // ADMIN UPDATE RESULT
+  // ============================================================
+
+  static Future<Map<String, dynamic>> updateAdminResult(
+    String token,
+    int resultId,
+    Map<String, dynamic> resultData,
+  ) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/results/$resultId'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(resultData),
     );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return data as Map<String, dynamic>;
+    }
+
+    if (data is Map<String, dynamic>) {
+      throw Exception(data['detail'] ?? 'Failed to update result');
+    }
+
+    throw Exception('Failed to update result: ${response.body}');
   }
-
-  throw Exception(
-    'Failed to load admin results: ${response.body}',
-  );
-}
-
-// ============================================================
-// ADMIN PUBLISH RESULT
-// ============================================================
-
-static Future<Map<String, dynamic>> publishResult(
-  String token,
-  int resultId,
-  String status,
-) async {
-  final response = await http.put(
-    Uri.parse('$baseUrl/results/$resultId/publish'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({
-      'status': status,
-    }),
-  );
-
-  final data = jsonDecode(response.body);
-
-  if (response.statusCode == 200) {
-    return data;
-  }
-
-  if (data is Map<String, dynamic>) {
-    throw Exception(
-      data['detail'] ?? 'Failed to update result status',
-    );
-  }
-
-  throw Exception(
-    'Failed to update result status: ${response.body}',
-  );
-}
-
-
-// ============================================================
-// ADMIN CREATE RESULT
-// ============================================================
-
-static Future<Map<String, dynamic>> createAdminResult(
-  String token,
-  Map<String, dynamic> resultData,
-) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/results'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode(resultData),
-  );
-
-  final data = jsonDecode(response.body);
-
-  if (response.statusCode == 201) {
-    return data as Map<String, dynamic>;
-  }
-
-  if (data is Map<String, dynamic>) {
-    throw Exception(
-      data['detail'] ?? 'Failed to create result',
-    );
-  }
-
-  throw Exception(
-    'Failed to create result: ${response.body}',
-  );
-}
-
-// ============================================================
-// ADMIN UPDATE RESULT
-// ============================================================
-
-static Future<Map<String, dynamic>> updateAdminResult(
-  String token,
-  int resultId,
-  Map<String, dynamic> resultData,
-) async {
-  final response = await http.put(
-    Uri.parse('$baseUrl/results/$resultId'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode(resultData),
-  );
-
-  final data = jsonDecode(response.body);
-
-  if (response.statusCode == 200) {
-    return data as Map<String, dynamic>;
-  }
-
-  if (data is Map<String, dynamic>) {
-    throw Exception(
-      data['detail'] ?? 'Failed to update result',
-    );
-  }
-
-  throw Exception(
-    'Failed to update result: ${response.body}',
-  );
-}
 
   // ============================================================
   // ADMIN DELETE RESULT
@@ -1146,14 +1003,179 @@ static Future<Map<String, dynamic>> updateAdminResult(
     }
 
     if (data is Map<String, dynamic>) {
-      throw Exception(
-        data['detail'] ?? 'Failed to delete result',
-      );
+      throw Exception(data['detail'] ?? 'Failed to delete result');
     }
 
-    throw Exception(
-      'Failed to delete result: ${response.body}',
-    );
+    throw Exception('Failed to delete result: ${response.body}');
   }
 
+  static Future<Map<String, dynamic>> getStudentFeeSummary(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/student/fees/summary'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return Map<String, dynamic>.from(data);
+    }
+
+    throw Exception(data['detail'] ?? 'Failed to load fee summary');
+  }
+
+  static Future<List<dynamic>> getStudentFeeInvoices(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/student/fees/invoices'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return List<dynamic>.from(data);
+    }
+
+    throw Exception(data['detail'] ?? 'Failed to load fee invoices');
+  }
+
+  static Future<List<dynamic>> getStudentFeePayments(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/student/fees/payments'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      return List<dynamic>.from(data);
+    }
+
+    throw Exception(data['detail'] ?? 'Failed to load payment history');
+  }
+
+  // ============================================================
+  // STUDENT SERVICES
+  // ============================================================
+
+  static Future<Map<String, dynamic>> getStudentVisa(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/student/visa'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load visa information');
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> requestStudentVisa(String token) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/student/visa/request'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to submit visa request');
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  static Future<List<dynamic>> getStudentAnnouncements(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/student/announcements'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load announcements');
+    }
+
+    return jsonDecode(response.body) as List<dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> askStudentAI(
+    String token,
+    String question,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/student/ai-help'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'question': question}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to contact Student Assistant');
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  static Future<List<dynamic>> getAdminAnnouncements(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/admin/announcements'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load admin announcements');
+    }
+
+    return jsonDecode(response.body) as List<dynamic>;
+  }
+
+  static Future<Map<String, dynamic>> createAdminAnnouncement(
+    String token,
+    String title,
+    String message,
+    String category,
+    bool isPublished,
+  ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/admin/announcements'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'title': title,
+        'message': message,
+        'category': category,
+        'is_published': isPublished,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to create announcement');
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
 }

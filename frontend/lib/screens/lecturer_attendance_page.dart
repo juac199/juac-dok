@@ -5,43 +5,31 @@ import '../services/api_service.dart';
 class LecturerAttendancePage extends StatefulWidget {
   final String token;
 
-  const LecturerAttendancePage({
-    super.key,
-    required this.token,
-  });
+  const LecturerAttendancePage({super.key, required this.token});
 
   @override
-  State<LecturerAttendancePage> createState() =>
-      _LecturerAttendancePageState();
+  State<LecturerAttendancePage> createState() => _LecturerAttendancePageState();
 }
 
-class _LecturerAttendancePageState
-    extends State<LecturerAttendancePage> {
+class _LecturerAttendancePageState extends State<LecturerAttendancePage> {
   late Future<List<dynamic>> _subjectsFuture;
 
   @override
   void initState() {
     super.initState();
 
-    _subjectsFuture =
-        ApiService.getMyLecturerSubjects(widget.token);
+    _subjectsFuture = ApiService.getMyLecturerSubjects(widget.token);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Attendance'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Attendance'), centerTitle: true),
       body: FutureBuilder<List<dynamic>>(
         future: _subjectsFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -62,9 +50,7 @@ class _LecturerAttendancePageState
             return const Center(
               child: Text(
                 'No subjects assigned.',
-                style: TextStyle(
-                  fontSize: 18,
-                ),
+                style: TextStyle(fontSize: 18),
               ),
             );
           }
@@ -75,35 +61,25 @@ class _LecturerAttendancePageState
             itemBuilder: (context, index) {
               final subject = subjects[index];
 
-              debugPrint(
-                'ATTENDANCE SUBJECT DATA: $subject',
-              );
+              debugPrint('ATTENDANCE SUBJECT DATA: $subject');
 
               final dynamic rawSubjectId =
                   subject['id'] ??
                   subject['subject_id'] ??
                   subject['course_id'];
 
-              final int? subjectId =
-                  rawSubjectId is int
-                      ? rawSubjectId
-                      : int.tryParse(
-                          rawSubjectId?.toString() ?? '',
-                        );
+              final int? subjectId = rawSubjectId is int
+                  ? rawSubjectId
+                  : int.tryParse(rawSubjectId?.toString() ?? '');
 
               return Card(
                 elevation: 2,
-                margin: const EdgeInsets.only(
-                  bottom: 14,
-                ),
+                margin: const EdgeInsets.only(bottom: 14),
                 child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.all(18),
+                  contentPadding: const EdgeInsets.all(18),
                   leading: const CircleAvatar(
                     radius: 28,
-                    child: Icon(
-                      Icons.fact_check,
-                    ),
+                    child: Icon(Icons.fact_check),
                   ),
                   title: Text(
                     subject['course_code'] ??
@@ -115,31 +91,19 @@ class _LecturerAttendancePageState
                     ),
                   ),
                   subtitle: Padding(
-                    padding: const EdgeInsets.only(
-                      top: 8,
-                    ),
+                    padding: const EdgeInsets.only(top: 8),
                     child: Text(
                       subject['course_name'] ??
                           subject['subject_name'] ??
                           'Unknown Subject',
-                      style: const TextStyle(
-                        fontSize: 16,
-                      ),
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 18,
-                  ),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 18),
                   onTap: () {
                     if (subjectId == null) {
-                      ScaffoldMessenger.of(context)
-                          .showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Subject ID not found.',
-                          ),
-                        ),
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Subject ID not found.')),
                       );
                       return;
                     }
@@ -147,8 +111,7 @@ class _LecturerAttendancePageState
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            SubjectAttendancePage(
+                        builder: (context) => SubjectAttendancePage(
                           token: widget.token,
                           subjectId: subjectId,
                           subjectName:
@@ -182,12 +145,10 @@ class SubjectAttendancePage extends StatefulWidget {
   });
 
   @override
-  State<SubjectAttendancePage> createState() =>
-      _SubjectAttendancePageState();
+  State<SubjectAttendancePage> createState() => _SubjectAttendancePageState();
 }
 
-class _SubjectAttendancePageState
-    extends State<SubjectAttendancePage> {
+class _SubjectAttendancePageState extends State<SubjectAttendancePage> {
   late Future<List<dynamic>> _studentsFuture;
 
   DateTime _selectedDate = DateTime.now();
@@ -202,19 +163,17 @@ class _SubjectAttendancePageState
   void initState() {
     super.initState();
 
-    _studentsFuture =
-        ApiService.getMySubjectStudents(
+    _studentsFuture = ApiService.getMySubjectStudents(
       widget.token,
-          widget.subjectId,
+      widget.subjectId,
     );
   }
 
   Future<void> _refreshStudents() async {
     setState(() {
-      _studentsFuture =
-          ApiService.getMySubjectStudents(
+      _studentsFuture = ApiService.getMySubjectStudents(
         widget.token,
-            widget.subjectId,
+        widget.subjectId,
       );
     });
 
@@ -237,17 +196,11 @@ class _SubjectAttendancePageState
   }
 
   String get _formattedDate {
-    final year = _selectedDate.year
-        .toString()
-        .padLeft(4, '0');
+    final year = _selectedDate.year.toString().padLeft(4, '0');
 
-    final month = _selectedDate.month
-        .toString()
-        .padLeft(2, '0');
+    final month = _selectedDate.month.toString().padLeft(2, '0');
 
-    final day = _selectedDate.day
-        .toString()
-        .padLeft(2, '0');
+    final day = _selectedDate.day.toString().padLeft(2, '0');
 
     return '$year-$month-$day';
   }
@@ -255,11 +208,7 @@ class _SubjectAttendancePageState
   Future<void> _markAttendance() async {
     if (_selectedStudentId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Please select a student first.',
-          ),
-        ),
+        const SnackBar(content: Text('Please select a student first.')),
       );
       return;
     }
@@ -269,35 +218,23 @@ class _SubjectAttendancePageState
     });
 
     try {
-      await ApiService.markLecturerAttendance(
-        widget.token,
-        {
-          'subject_id': widget.subjectId,
-          'student_id': _selectedStudentId,
-          'attendance_date': _formattedDate,
-          'status':
-              _isPresent ? 'present' : 'absent',
-        },
-      );
+      await ApiService.markLecturerAttendance(widget.token, {
+        'subject_id': widget.subjectId,
+        'student_id': _selectedStudentId,
+        'attendance_date': _formattedDate,
+        'status': _isPresent ? 'present' : 'absent',
+      });
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Attendance recorded successfully.',
-          ),
-        ),
+        const SnackBar(content: Text('Attendance recorded successfully.')),
       );
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Failed to record attendance.\n$e',
-          ),
-        ),
+        SnackBar(content: Text('Failed to record attendance.\n$e')),
       );
     } finally {
       if (mounted) {
@@ -311,18 +248,12 @@ class _SubjectAttendancePageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.subjectName),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text(widget.subjectName), centerTitle: true),
       body: FutureBuilder<List<dynamic>>(
         future: _studentsFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -343,9 +274,7 @@ class _SubjectAttendancePageState
             return const Center(
               child: Text(
                 'No students enrolled in this subject.',
-                style: TextStyle(
-                  fontSize: 18,
-                ),
+                style: TextStyle(fontSize: 18),
                 textAlign: TextAlign.center,
               ),
             );
@@ -354,38 +283,30 @@ class _SubjectAttendancePageState
           return RefreshIndicator(
             onRefresh: _refreshStudents,
             child: SingleChildScrollView(
-              physics:
-                  const AlwaysScrollableScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(24),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Card(
                     elevation: 2,
                     child: Padding(
-                      padding:
-                          const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(20),
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
                             'Attendance Date',
                             style: TextStyle(
                               fontSize: 18,
-                              fontWeight:
-                                  FontWeight.bold,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 12),
                           OutlinedButton.icon(
                             onPressed: _selectDate,
-                            icon: const Icon(
-                              Icons.calendar_today,
-                            ),
-                            label:
-                                Text(_formattedDate),
+                            icon: const Icon(Icons.calendar_today),
+                            label: Text(_formattedDate),
                           ),
                         ],
                       ),
@@ -395,66 +316,48 @@ class _SubjectAttendancePageState
                   Card(
                     elevation: 2,
                     child: Padding(
-                      padding:
-                          const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(20),
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
                             'Select Student',
                             style: TextStyle(
                               fontSize: 18,
-                              fontWeight:
-                                  FontWeight.bold,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 12),
                           DropdownButtonFormField<int>(
-                            initialValue:
-                                _selectedStudentId,
+                            initialValue: _selectedStudentId,
                             isExpanded: true,
-                            decoration:
-                                const InputDecoration(
+                            decoration: const InputDecoration(
                               labelText: 'Student',
-                              border:
-                                  OutlineInputBorder(),
-                              prefixIcon: Icon(
-                                Icons.person,
-                              ),
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.person),
                             ),
-                            items:
-                                students.map((student) {
-                              final dynamic
-                                  rawStudentId =
-                                  student[
-                                          'student_id'] ??
-                                      student['id'];
+                            items: students.map((student) {
+                              final dynamic rawStudentId =
+                                  student['student_id'] ?? student['id'];
 
-                              final int? studentId =
-                                  rawStudentId is int
-                                      ? rawStudentId
-                                      : int.tryParse(
-                                          rawStudentId
-                                                  ?.toString() ??
-                                              '',
-                                        );
+                              final int? studentId = rawStudentId is int
+                                  ? rawStudentId
+                                  : int.tryParse(
+                                      rawStudentId?.toString() ?? '',
+                                    );
 
                               return DropdownMenuItem<int>(
                                 value: studentId,
                                 child: Text(
                                   '${student['student_number'] ?? 'N/A'} - '
                                   '${student['full_name'] ?? 'Unknown Student'}',
-                                  overflow:
-                                      TextOverflow
-                                          .ellipsis,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               );
                             }).toList(),
                             onChanged: (value) {
                               setState(() {
-                                _selectedStudentId =
-                                    value;
+                                _selectedStudentId = value;
                               });
                             },
                           ),
@@ -466,18 +369,15 @@ class _SubjectAttendancePageState
                   Card(
                     elevation: 2,
                     child: Padding(
-                      padding:
-                          const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(20),
                       child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
                             'Attendance Status',
                             style: TextStyle(
                               fontSize: 18,
-                              fontWeight:
-                                  FontWeight.bold,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -485,20 +385,17 @@ class _SubjectAttendancePageState
                             groupValue: _isPresent,
                             onChanged: (value) {
                               setState(() {
-                                _isPresent =
-                                    value ?? true;
+                                _isPresent = value ?? true;
                               });
                             },
                             child: const Column(
                               children: [
                                 RadioListTile<bool>(
-                                  title:
-                                      Text('Present'),
+                                  title: Text('Present'),
                                   value: true,
                                 ),
                                 RadioListTile<bool>(
-                                  title:
-                                      Text('Absent'),
+                                  title: Text('Absent'),
                                   value: false,
                                 ),
                               ],
@@ -512,28 +409,16 @@ class _SubjectAttendancePageState
                   SizedBox(
                     width: double.infinity,
                     height: 52,
-                    child:
-                        ElevatedButton.icon(
-                      onPressed: _isSaving
-                          ? null
-                          : _markAttendance,
+                    child: ElevatedButton.icon(
+                      onPressed: _isSaving ? null : _markAttendance,
                       icon: _isSaving
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child:
-                                  CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(
-                              Icons.save,
-                            ),
-                      label: Text(
-                        _isSaving
-                            ? 'Saving...'
-                            : 'Save Attendance',
-                      ),
+                          : const Icon(Icons.save),
+                      label: Text(_isSaving ? 'Saving...' : 'Save Attendance'),
                     ),
                   ),
                 ],

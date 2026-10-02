@@ -1,48 +1,34 @@
-
 import 'package:flutter/material.dart';
 import 'package:frontend/services/api_service.dart';
-
 
 class LecturerSubjectsPage extends StatefulWidget {
   final String token;
 
-  const LecturerSubjectsPage({
-    super.key,
-    required this.token,
-  });
+  const LecturerSubjectsPage({super.key, required this.token});
 
   @override
-  State<LecturerSubjectsPage> createState() =>
-      _LecturerSubjectsPageState();
+  State<LecturerSubjectsPage> createState() => _LecturerSubjectsPageState();
 }
 
-class _LecturerSubjectsPageState
-    extends State<LecturerSubjectsPage> {
+class _LecturerSubjectsPageState extends State<LecturerSubjectsPage> {
   late Future<List<dynamic>> _subjectsFuture;
 
   @override
   void initState() {
     super.initState();
 
-    _subjectsFuture =
-        ApiService.getMyLecturerSubjects(widget.token);
+    _subjectsFuture = ApiService.getMyLecturerSubjects(widget.token);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('My Subjects'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('My Subjects'), centerTitle: true),
       body: FutureBuilder<List<dynamic>>(
         future: _subjectsFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState ==
-              ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (snapshot.hasError) {
@@ -63,9 +49,7 @@ class _LecturerSubjectsPageState
             return const Center(
               child: Text(
                 'No subjects assigned.',
-                style: TextStyle(
-                  fontSize: 18,
-                ),
+                style: TextStyle(fontSize: 18),
               ),
             );
           }
@@ -73,8 +57,7 @@ class _LecturerSubjectsPageState
           return RefreshIndicator(
             onRefresh: () async {
               setState(() {
-                _subjectsFuture =
-                    ApiService.getMyLecturerSubjects(
+                _subjectsFuture = ApiService.getMyLecturerSubjects(
                   widget.token,
                 );
               });
@@ -96,9 +79,7 @@ class _LecturerSubjectsPageState
                       radius: 28,
                       child: Text(
                         '${subject['id'] ?? ''}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                     title: Text(
@@ -116,15 +97,10 @@ class _LecturerSubjectsPageState
                         subject['course_name'] ??
                             subject['subject_name'] ??
                             'Unknown Subject',
-                        style: const TextStyle(
-                          fontSize: 16,
-                        ),
+                        style: const TextStyle(fontSize: 16),
                       ),
                     ),
-                    trailing: const Icon(
-                      Icons.arrow_forward_ios,
-                      size: 18,
-                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios, size: 18),
                   ),
                 );
               },
